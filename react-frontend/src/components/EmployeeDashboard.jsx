@@ -39,89 +39,74 @@ const EmployeeDashboard = () => {
     };
 
     return (
-        <div className="dashboard-layout">
-            <aside className="sidebar glass-panel">
-                <div className="brand">
-                    <div className="logo-box">
-                        <Users size={28} className="text-white" />
-                    </div>
-                    <h2>EmpManage</h2>
-                </div>
-                <nav className="nav-menu">
-                    <a href="#" className="nav-item active"><LayoutDashboard size={18} /> Dashboard</a>
-                    <a href="#" className="nav-item"><Users size={18} /> Directory</a>
-                </nav>
-            </aside>
+        <div className="row g-4">
+            <div className="col-12 col-lg-4">
+                <EmployeeForm onEmployeeAdded={fetchEmployees} />
+            </div>
 
-            <main className="main-content">
-                <header className="top-header">
-                    <div>
-                        <h1>Employee Directory</h1>
-                        <p className="subtitle">Manage your team members and their roles.</p>
+            <div className="col-12 col-lg-8">
+                <div className="card shadow-sm">
+                    <div className="card-header bg-white pt-3 pb-2 d-flex justify-content-between align-items-center">
+                        <h4 className="card-title mb-0 text-primary">
+                            <Users size={24} className="me-2 mb-1" />
+                            Current Team ({employees.length})
+                        </h4>
                     </div>
 
-                </header>
-
-                <div className="content-grid">
-                    <section className="form-section">
-                        <EmployeeForm onEmployeeAdded={fetchEmployees} />
-                    </section>
-
-                    <section className="table-section glass-panel">
-                        <div className="table-header">
-                            <h3><Users size={20} className="icon-inline" /> Current Team ({employees.length})</h3>
-                        </div>
-
+                    <div className="card-body p-0">
                         {loading ? (
-                            <div className="loading-state">
-                                <div className="spinner"></div>
-                                <p>Loading directory...</p>
+                            <div className="text-center p-5">
+                                <div className="spinner-border text-primary" role="status">
+                                    <span className="visually-hidden">Loading...</span>
+                                </div>
+                                <p className="mt-2 text-muted">Loading directory...</p>
                             </div>
                         ) : error ? (
-                            <div className="error-banner">{error}</div>
+                            <div className="alert alert-danger m-3">{error}</div>
                         ) : employees.length === 0 ? (
-                            <div className="empty-state">
-                                <Users size={40} className="empty-icon" />
-                                <p>No employees found. Add one to get started.</p>
+                            <div className="text-center p-5 text-muted">
+                                <Users size={48} className="mb-3 text-secondary" />
+                                <h5>No employees found</h5>
+                                <p>Add one to get started.</p>
                             </div>
                         ) : (
                             <div className="table-responsive">
-                                <table className="employee-table">
-                                    <thead>
+                                <table className="table table-hover table-striped align-middle mb-0">
+                                    <thead className="table-light">
                                         <tr>
-                                            <th>ID</th>
-                                            <th>Employee</th>
-                                            <th>Contact</th>
-                                            <th>Department</th>
-                                            <th>Actions</th>
+                                            <th className="px-4 py-3">ID</th>
+                                            <th className="py-3">Employee</th>
+                                            <th className="py-3">Contact</th>
+                                            <th className="py-3">Department</th>
+                                            <th className="text-end px-4 py-3">Actions</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody className="border-top-0">
                                         {employees.map(emp => (
                                             <tr key={emp.id}>
-                                                <td>#{emp.id}</td>
+                                                <td className="px-4"><strong>#{emp.id}</strong></td>
                                                 <td>
-                                                    <div className="user-info">
-                                                        <div className="avatar">
+                                                    <div className="d-flex align-items-center">
+                                                        <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold me-3" style={{ width: '40px', height: '40px' }}>
                                                             {emp.firstName.charAt(0)}{emp.lastName.charAt(0)}
                                                         </div>
-                                                        <div className="name">
-                                                            <span>{emp.firstName} {emp.lastName}</span>
+                                                        <div>
+                                                            <div className="fw-bold text-dark">{emp.firstName} {emp.lastName}</div>
                                                         </div>
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <div className="contact-info">
-                                                        <Mail size={14} /> {emp.emailId}
+                                                    <div className="text-secondary d-flex align-items-center">
+                                                        <Mail size={16} className="me-2 text-muted" /> {emp.email}
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <span className="badge department-badge">
-                                                        <Building size={12} /> {emp.department}
+                                                    <span className="badge bg-info text-dark bg-opacity-25 px-2 py-1 border border-info border-opacity-25 rounded-pill">
+                                                        <Building size={14} className="me-1 mb-1" /> {emp.department}
                                                     </span>
                                                 </td>
-                                                <td>
-                                                    <button onClick={() => handleDelete(emp.id)} className="btn-icon btn-danger" title="Delete Employee">
+                                                <td className="text-end px-4">
+                                                    <button onClick={() => handleDelete(emp.id)} className="btn btn-outline-danger btn-sm" title="Delete Employee">
                                                         <Trash2 size={16} />
                                                     </button>
                                                 </td>
@@ -131,9 +116,9 @@ const EmployeeDashboard = () => {
                                 </table>
                             </div>
                         )}
-                    </section>
+                    </div>
                 </div>
-            </main>
+            </div>
         </div>
     );
 };

@@ -37,6 +37,7 @@
 
         <module>payment-service</module>
         <module>common-service</module>
+        <module>auth-service</module>
     </modules>
 
     <dependencies>
