@@ -38,7 +38,7 @@ ingress:
   className: ""
   annotations:
     kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/rewrite-target: /api/$1
   hosts:
     - host: springbootapp.local
       paths:
@@ -46,16 +46,16 @@ ingress:
           pathType: ImplementationSpecific
           backend:
             service:
-              name: "{{ .Release.Name }}-springbootapp-chart"
+              name: api-gateway
               port:
-                number: 8081
+                number: 8080
         - path: /actuator/?(.*)
           pathType: ImplementationSpecific
           backend:
             service:
-              name: "{{ .Release.Name }}-springbootapp-chart"
+              name: api-gateway
               port:
-                number: 8081
+                number: 8080
 
 autoscaling:
   enabled: false
