@@ -46,16 +46,16 @@ ingress:
           pathType: ImplementationSpecific
           backend:
             service:
-              name: api-gateway
+              name: api-gateway-springbootapp-chart
               port:
-                number: 8080
+                number: 8081
         - path: /actuator/?(.*)
           pathType: ImplementationSpecific
           backend:
             service:
-              name: api-gateway
+              name: api-gateway-springbootapp-chart
               port:
-                number: 8080
+                number: 8081
 
 autoscaling:
   enabled: false

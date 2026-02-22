@@ -1,0 +1,65 @@
+# Default values for springbootapp-backend.
+# This is a YAML-formatted file.
+
+replicaCount: 1
+
+image:
+  repository: springbootapps-auth-service
+  pullPolicy: Never
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 8089
+
+appConfig:
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres-employee.db.svc.cluster.local:5432/employee_db"
+  SPRING_DATASOURCE_USERNAME: "postgres"
+  SPRING_DATASOURCE_PASSWORD: "root"
+  SERVER_PORT: "8089"
+
+ingress:
+  enabled: false
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /api/$1
+  hosts:
+    - host: springbootapp.local
+      paths:
+        - path: /api/?(.*)
+          pathType: ImplementationSpecific
+          backend:
+            service:
+              name: api-gateway
+              port:
+                number: 8080
+        - path: /actuator/?(.*)
+          pathType: ImplementationSpecific
+          backend:
+            service:
+              name: api-gateway
+              port:
+                number: 8080
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
