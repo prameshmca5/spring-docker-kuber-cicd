@@ -1,0 +1,54 @@
+services:
+
+  # ── MySQL 8 ──────────────────────────────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: employee_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: employee_db
+    ports:
+      - "3307:3306" # Host 3307 → container 3306 (avoids clash with local MySQL)
+    volumes:
+      - mysql_data:/var/lib/mysql # persist data across container restarts
+    networks:
+      - app_network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ── Spring Boot App ──────────────────────────────────────────────────────────
+  springbootapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: employee_app
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      DB_HOST: mysql # matches the service name above
+      DB_PORT: 3306
+      DB_NAME: employee_db
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      SERVER_PORT: 8081
+    depends_on:
+      mysql:
+        condition: service_healthy # wait until MySQL passes its healthcheck
+    networks:
+      - app_network
+
+# ── Named Volumes ─────────────────────────────────────────────────────────────
+volumes:
+  mysql_data:
+    driver: local
+
+# ── Networks ──────────────────────────────────────────────────────────────────
+networks:
+  app_network:
+    driver: bridge

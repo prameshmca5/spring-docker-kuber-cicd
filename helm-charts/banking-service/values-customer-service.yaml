@@ -1,0 +1,8 @@
+serviceName: "customer-service"
+image:
+  repository: "springbootapps-customer-service"
+  pullPolicy: Never
+  tag: "latest"
+service:
+  type: ClusterIP
+  port: 8082

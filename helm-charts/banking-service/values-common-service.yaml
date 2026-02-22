@@ -1,0 +1,8 @@
+serviceName: "common-service"
+image:
+  repository: "springbootapps-common-service"
+  pullPolicy: Never
+  tag: "latest"
+service:
+  type: ClusterIP
+  port: 8087

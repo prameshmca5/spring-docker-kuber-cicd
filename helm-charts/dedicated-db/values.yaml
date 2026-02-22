@@ -1,0 +1,25 @@
+type: mysql # options: mysql, postgres, db2
+name: "" # instance name (e.g., account-db)
+namespace: db
+
+mysql:
+  image: mysql:8.0
+  rootPassword: root
+  database: mydb
+  port: 3306
+  pullPolicy: IfNotPresent
+
+postgres:
+  image: postgres:15
+  database: mydb
+  username: postgres
+  password: root
+  port: 5432
+
+db2:
+  image: icr.io/db2_community/db2:11.5.9.0
+  database: testdb
+  username: db2inst1
+  password: password
+  port: 50000
+  pullPolicy: IfNotPresent

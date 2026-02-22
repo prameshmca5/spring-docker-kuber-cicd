@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Values.serviceName }}-deployment"
+  labels:
+    app: "{{ .Values.serviceName }}"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "{{ .Values.serviceName }}"
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "{{ .Values.service.port }}"
+      labels:
+        app: "{{ .Values.serviceName }}"
+    spec:
+      containers:
+        - name: "{{ .Values.serviceName }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: "global-infrastructure-config"
+            - configMapRef:
+                name: "{{ .Values.serviceName }}-config"
+          env:
+            - name: SERVER_PORT
+              value: "{{ .Values.service.port }}"
+{{- if ne .Values.serviceName "discovery-server" }}
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: "$(EUREKA_SERVER_URL)"
+{{- end }}
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 120
+            periodSeconds: 15
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            failureThreshold: 5
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

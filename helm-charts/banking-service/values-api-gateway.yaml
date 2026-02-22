@@ -1,0 +1,8 @@
+serviceName: "api-gateway"
+image:
+  repository: "springbootapps-api-gateway"
+  pullPolicy: Never
+  tag: "latest"
+service:
+  type: NodePort
+  port: 8080

@@ -1,0 +1,8 @@
+serviceName: "transaction-service"
+image:
+  repository: "springbootapps-transaction-service"
+  pullPolicy: Never
+  tag: "latest"
+service:
+  type: ClusterIP
+  port: 8083
