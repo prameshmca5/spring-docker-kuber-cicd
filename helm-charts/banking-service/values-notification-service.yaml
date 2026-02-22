@@ -1,0 +1,8 @@
+serviceName: "notification-service"
+image:
+  repository: "springbootapps-notification-service"
+  pullPolicy: Never
+  tag: "latest"
+service:
+  type: ClusterIP
+  port: 8084

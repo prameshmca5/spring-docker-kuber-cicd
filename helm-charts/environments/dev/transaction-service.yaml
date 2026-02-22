@@ -1,0 +1,10 @@
+appConfig:
+  DB_HOST: "mysql-transaction.db.svc.cluster.local"
+  DB_NAME: "transaction_db"
+  DB_USERNAME: "root"
+  DB_PASSWORD: "root"
+service:
+  port: 8083
+ingress:
+  enabled: true
+  host: "springbootapp.local"

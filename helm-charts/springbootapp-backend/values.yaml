@@ -1,0 +1,68 @@
+# Default values for springbootapp-backend.
+# This is a YAML-formatted file.
+
+replicaCount: 1
+
+image:
+  repository: springbootapps-springbootapp
+  pullPolicy: Never
+  tag: "v2"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+
+service:
+  type: NodePort
+  port: 8081
+
+appConfig:
+  DB_HOST: "springbootapp-db-postgres.db.svc.cluster.local"
+  DB_PORT: "5432"
+  DB_NAME: "employee_db"
+  DB_USERNAME: "postgres"
+  DB_PASSWORD: "root"
+  SERVER_PORT: "8081"
+
+ingress:
+  enabled: true
+  className: ""
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+  hosts:
+    - host: springbootapp.local
+      paths:
+        - path: /api/?(.*)
+          pathType: ImplementationSpecific
+          backend:
+            service:
+              name: "{{ .Release.Name }}-springbootapp-chart"
+              port:
+                number: 8081
+        - path: /actuator/?(.*)
+          pathType: ImplementationSpecific
+          backend:
+            service:
+              name: "{{ .Release.Name }}-springbootapp-chart"
+              port:
+                number: 8081
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

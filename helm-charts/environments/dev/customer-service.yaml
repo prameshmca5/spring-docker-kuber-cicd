@@ -1,0 +1,10 @@
+appConfig:
+  DB_HOST: "postgres-customer.db.svc.cluster.local"
+  DB_NAME: "customer_db"
+  DB_USERNAME: "postgres"
+  DB_PASSWORD: "root"
+service:
+  port: 8082
+ingress:
+  enabled: true
+  host: "springbootapp.local"

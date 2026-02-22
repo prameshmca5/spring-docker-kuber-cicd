@@ -1,0 +1,8 @@
+serviceName: "account-service"
+image:
+  repository: "springbootapps-account-service"
+  pullPolicy: Never
+  tag: "latest"
+service:
+  type: ClusterIP
+  port: 8081

@@ -1,0 +1,9 @@
+serviceName: "discovery-server"
+image:
+  repository: "springbootapps-discovery-server"
+  pullPolicy: Never
+  tag: "latest"
+service:
+  type: ClusterIP
+  port: 8761
+appConfig: {}

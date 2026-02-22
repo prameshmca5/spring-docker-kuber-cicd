@@ -1,0 +1,10 @@
+appConfig:
+  DB_HOST: "mysql-common.db.svc.cluster.local"
+  DB_NAME: "common_db"
+  DB_USERNAME: "root"
+  DB_PASSWORD: "root"
+service:
+  port: 8087
+ingress:
+  enabled: true
+  host: "springbootapp.local"

@@ -1,0 +1,6 @@
+appConfig:
+  DB_HOST: "mysql-prod.db.svc.cluster.local"
+  DB_NAME: "account_db_prod"
+  DB_USERNAME: "prod_user"
+  DB_PASSWORD: "prod_password"
+  KAFKA_BOOTSTRAP_SERVERS: "kafka-prod.external-tools.svc.cluster.local:9092"

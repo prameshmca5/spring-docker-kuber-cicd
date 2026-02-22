@@ -1,0 +1,8 @@
+serviceName: "employee-service"
+image:
+  repository: "springbootapps-employee-service"
+  pullPolicy: Never
+  tag: "latest"
+service:
+  type: ClusterIP
+  port: 8086

@@ -1,0 +1,129 @@
+{{- if eq .Values.type "mysql" -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  ports:
+    - port: {{ .Values.mysql.port }}
+      targetPort: 3306
+  selector:
+    app: {{ .Values.name }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.name }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.name }}
+    spec:
+      containers:
+        - image: {{ .Values.mysql.image }}
+          name: mysql
+          imagePullPolicy: {{ .Values.mysql.pullPolicy }}
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: {{ .Values.mysql.rootPassword | quote }}
+            - name: MYSQL_DATABASE
+              value: {{ .Values.mysql.database | quote }}
+          ports:
+            - containerPort: 3306
+              name: mysql
+{{- end }}
+
+{{- if eq .Values.type "postgres" -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  ports:
+    - port: {{ .Values.postgres.port }}
+      targetPort: 5432
+  selector:
+    app: {{ .Values.name }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.name }}
+    spec:
+      containers:
+        - name: postgres
+          image: {{ .Values.postgres.image }}
+          env:
+            - name: POSTGRES_USER
+              value: {{ .Values.postgres.username | quote }}
+            - name: POSTGRES_PASSWORD
+              value: {{ .Values.postgres.password | quote }}
+            - name: POSTGRES_DB
+              value: {{ .Values.postgres.database | quote }}
+          ports:
+            - containerPort: 5432
+              name: postgres
+{{- end }}
+
+{{- if eq .Values.type "db2" -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  ports:
+    - port: {{ .Values.db2.port }}
+      targetPort: 50000
+  selector:
+    app: {{ .Values.name }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.name }}
+    spec:
+      containers:
+        - name: db2
+          image: {{ .Values.db2.image }}
+          imagePullPolicy: {{ .Values.db2.pullPolicy }}
+          env:
+            - name: DB2INST1_PASSWORD
+              value: {{ .Values.db2.password | quote }}
+            - name: DBNAME
+              value: {{ .Values.db2.database | quote }}
+            - name: LICENSE
+              value: "accept"
+          ports:
+            - containerPort: 50000
+              name: db2
+          securityContext:
+            privileged: true
+{{- end }}

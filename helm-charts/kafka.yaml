@@ -1,0 +1,93 @@
+---
+# ── Namespace ──────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: external-tools
+
+---
+# ── Kafka Service (ClusterIP) ─────────────────────────────────────────────────
+# FQDN: kafka.external-tools.svc.cluster.local:9092
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka
+  namespace: external-tools
+  labels:
+    app: kafka
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9092
+      targetPort: 9092
+      name: plaintext
+  selector:
+    app: kafka
+
+---
+# ── Kafka Deployment (KRaft mode - no Zookeeper required) ────────────────────
+# Uses official Apache Kafka 3.8.1 image (multi-arch, ARM64 compatible)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka
+  namespace: external-tools
+  labels:
+    app: kafka
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+        - name: kafka
+          image: apache/kafka:3.8.1
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 9092
+          command:
+            - /bin/bash
+            - -c
+            - |
+              export CLUSTER_ID=$(/opt/kafka/bin/kafka-storage.sh random-uuid)
+              /opt/kafka/bin/kafka-storage.sh format -t $CLUSTER_ID \
+                -c /opt/kafka/config/kraft/server.properties 2>/dev/null || true
+              exec /opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/kraft/server.properties \
+                --override node.id=1 \
+                --override process.roles=broker,controller \
+                --override listeners=PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093 \
+                --override advertised.listeners=PLAINTEXT://kafka.external-tools.svc.cluster.local:9092 \
+                --override listener.security.protocol.map=PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT \
+                --override controller.quorum.voters=1@localhost:9093 \
+                --override controller.listener.names=CONTROLLER \
+                --override inter.broker.listener.name=PLAINTEXT \
+                --override auto.create.topics.enable=true \
+                --override num.partitions=3 \
+                --override default.replication.factor=1 \
+                --override offsets.topic.replication.factor=1 \
+                --override transaction.state.log.replication.factor=1 \
+                --override transaction.state.log.min.isr=1
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "200m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          readinessProbe:
+            tcpSocket:
+              port: 9092
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket:
+              port: 9092
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 5
