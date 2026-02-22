@@ -1,13 +1,35 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Landmark, User, Bell, LayoutDashboard, CreditCard, ArrowRightLeft, Settings, LogOut, AlertTriangle } from 'lucide-react';
+import { Landmark, User, Bell, LayoutDashboard, CreditCard, ArrowRightLeft, Settings, LogOut, AlertTriangle, MessageSquare } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
+import NotificationService from '../services/NotificationService';
 
 const BankingDashboard = () => {
     const { user, logout } = useContext(AuthContext);
     const navigate = useNavigate();
     const [showDropdown, setShowDropdown] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const [notifications, setNotifications] = useState([]);
+    const [showNotifications, setShowNotifications] = useState(false);
+
+    useEffect(() => {
+        const fetchNotifications = async () => {
+            if (user?.userId) {
+                try {
+                    const response = await NotificationService.getNotifications(user.userId);
+                    setNotifications(response.data);
+                } catch (error) {
+                    console.error("Failed to fetch notifications:", error);
+                }
+            }
+        };
+
+        // Fetch immediately on mount and then every 15 seconds
+        fetchNotifications();
+        const intervalId = setInterval(fetchNotifications, 15000);
+
+        return () => clearInterval(intervalId);
+    }, [user]);
 
     const confirmLogout = () => {
         logout();
@@ -60,16 +82,62 @@ const BankingDashboard = () => {
 
                         {/* Right-aligned Profile & Notifications */}
                         <div className="d-flex align-items-center text-white position-relative">
-                            <button className="btn btn-link text-white p-0 me-4 position-relative">
-                                <Bell size={22} />
-                                <span className="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
-                                    <span className="visually-hidden">New alerts</span>
-                                </span>
-                            </button>
+
+                            {/* Notification Bell */}
+                            <div className="position-relative me-4">
+                                <button
+                                    className="btn btn-link text-white p-0 position-relative"
+                                    onClick={() => { setShowNotifications(!showNotifications); setShowDropdown(false); }}
+                                >
+                                    <Bell size={22} />
+                                    {notifications.length > 0 && (
+                                        <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '0.65rem' }}>
+                                            {notifications.length}
+                                            <span className="visually-hidden">unread messages</span>
+                                        </span>
+                                    )}
+                                </button>
+
+                                {/* Notification Dropdown Menu */}
+                                {showNotifications && (
+                                    <div className="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-3 show p-0" style={{ position: 'absolute', top: '100%', right: '0', width: '320px', maxHeight: '400px', overflowY: 'auto' }}>
+                                        <div className="bg-light p-3 border-bottom d-flex justify-content-between align-items-center rounded-top">
+                                            <h6 className="mb-0 fw-bold">Notifications</h6>
+                                            <span className="badge bg-primary rounded-pill">{notifications.length} New</span>
+                                        </div>
+                                        <div className="list-group list-group-flush">
+                                            {notifications.length === 0 ? (
+                                                <div className="p-4 text-center text-muted">
+                                                    <MessageSquare size={24} className="mb-2 opacity-50" />
+                                                    <p className="mb-0 small">No new notifications</p>
+                                                </div>
+                                            ) : (
+                                                notifications.map((notif, idx) => (
+                                                    <div key={idx} className="list-group-item list-group-item-action py-3 px-3 border-bottom cursor-pointer hover-bg-light">
+                                                        <div className="d-flex align-items-start">
+                                                            <div className="bg-primary bg-opacity-10 text-primary p-2 rounded-circle me-3 mt-1">
+                                                                <Bell size={16} />
+                                                            </div>
+                                                            <div>
+                                                                <p className="mb-1 text-dark fs-6">{notif.message}</p>
+                                                                <small className="text-muted" style={{ fontSize: '0.75rem' }}>
+                                                                    {new Date(notif.timestamp).toLocaleString()}
+                                                                </small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* User Profile */}
                             <div
                                 className="d-flex align-items-center cursor-pointer"
                                 role="button"
-                                onClick={() => setShowDropdown(!showDropdown)}
+                                onClick={() => { setShowDropdown(!showDropdown); setShowNotifications(false); }}
                             >
                                 <span className="me-2 fw-medium d-none d-md-block">{user?.username || 'Admin User'}</span>
                                 <div className="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" style={{ width: '40px', height: '40px' }}>
