@@ -35,6 +35,10 @@ spring:
                   uri: lb://payment-service
                   predicates:
                       - Path=/api/v1/payments/**
+                - id: common-service
+                  uri: lb://common-service
+                  predicates:
+                      - Path=/api/common/**
 
 eureka:
     client:
