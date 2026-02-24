@@ -1,0 +1,205 @@
+{
+  "info": {
+    "name": "Cloud Banking Microservices (Core APIs)",
+    "description": "Collection of the existing active microservices APIs (Employee, Payment, Common).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Employee Service",
+      "item": [
+        {
+          "name": "Get All Employees",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/employees",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "employees"]
+            }
+          }
+        },
+        {
+          "name": "Create Employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"department\": \"Engineering\",\n  \"salary\": 85000.00,\n  \"phone\": \"+1-555-0198\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/employees",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "employees"]
+            }
+          }
+        },
+        {
+          "name": "Get Employee by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/employees/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "employees", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update Employee",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"department\": \"Management\",\n  \"salary\": 95000.00,\n  \"phone\": \"+1-555-0198\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/employees/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "employees", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Employee",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/employees/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "employees", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payment Service",
+      "item": [
+        {
+          "name": "Get All Payments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/payments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "payments"]
+            }
+          }
+        },
+        {
+          "name": "Create Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountId\": 101,\n  \"amount\": 250.50,\n  \"status\": \"COMPLETED\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/payments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "payments"]
+            }
+          }
+        },
+        {
+          "name": "Get Payment by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/payments/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "payments", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Common Service",
+      "item": [
+        {
+          "name": "Get Countries",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/common/countries",
+              "host": ["{{base_url}}"],
+              "path": ["api", "common", "countries"]
+            }
+          }
+        },
+        {
+          "name": "Get Cities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/common/cities",
+              "host": ["{{base_url}}"],
+              "path": ["api", "common", "cities"]
+            }
+          }
+        },
+        {
+          "name": "Get Account Types",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/common/account-types",
+              "host": ["{{base_url}}"],
+              "path": ["api", "common", "account-types"]
+            }
+          }
+        },
+        {
+          "name": "Get Customer Types",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/common/customer-types",
+              "host": ["{{base_url}}"],
+              "path": ["api", "common", "customer-types"]
+            }
+          }
+        },
+        {
+          "name": "Get Payment Types",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/common/payment-types",
+              "host": ["{{base_url}}"],
+              "path": ["api", "common", "payment-types"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://springbootapp.local",
+      "type": "string"
+    }
+  ]
+}

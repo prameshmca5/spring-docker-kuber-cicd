@@ -6,7 +6,7 @@ replicaCount: 1
 image:
   repository: springbootapps-react-frontend
   pullPolicy: Never
-  tag: "latest"
+  tag: "v10"
 
 imagePullSecrets: []
 nameOverride: ""

@@ -24,6 +24,7 @@ COPY transaction-service/ ./transaction-service/
 COPY notification-service/ ./notification-service/
 COPY payment-service/ ./payment-service/
 COPY common-service/ ./common-service/
+COPY auth-service/ ./auth-service/
 
 # Build just the specific module along with its reactor dependencies
 RUN chmod +x mvnw && ./mvnw clean package -pl ${MODULE_NAME} -am -DskipTests -B

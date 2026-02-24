@@ -1,19 +1,18 @@
 import axios from 'axios';
 
+// Assuming the API Gateway handles /api/v1/notifications routing
 const API_URL = '/api/v1/notifications';
 
-class NotificationService {
-    getAllNotifications() {
-        return axios.get(API_URL);
+const NotificationService = {
+    getNotifications: (customerId) => {
+        // We'll get the token from localStorage just like other services
+        const token = localStorage.getItem('token');
+        return axios.get(`${API_URL}/${customerId}`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
     }
+};
 
-    getNotificationById(id) {
-        return axios.get(`${API_URL}/${id}`);
-    }
-
-    deleteNotification(id) {
-        return axios.delete(`${API_URL}/${id}`);
-    }
-}
-
-export default new NotificationService();
+export default NotificationService;
