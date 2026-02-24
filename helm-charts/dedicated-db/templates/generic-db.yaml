@@ -1,4 +1,17 @@
 {{- if eq .Values.type "mysql" -}}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.name }}-pvc
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -39,9 +52,29 @@ spec:
           ports:
             - containerPort: 3306
               name: mysql
+          volumeMounts:
+            - name: {{ .Values.name }}-storage
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: {{ .Values.name }}-storage
+          persistentVolumeClaim:
+            claimName: {{ .Values.name }}-pvc
 {{- end }}
 
 {{- if eq .Values.type "postgres" -}}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.name }}-pvc
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -81,6 +114,13 @@ spec:
           ports:
             - containerPort: 5432
               name: postgres
+          volumeMounts:
+            - name: {{ .Values.name }}-storage
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: {{ .Values.name }}-storage
+          persistentVolumeClaim:
+            claimName: {{ .Values.name }}-pvc
 {{- end }}
 
 {{- if eq .Values.type "db2" -}}
