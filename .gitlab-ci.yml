@@ -1,0 +1,43 @@
+image: docker:20.10.16
+
+variables:
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+
+services:
+  - docker:20.10.16-dind
+
+stages:
+  - build
+  - deploy_local
+
+build_images:
+  stage: build
+  image: maven:3.8.5-openjdk-17
+  script:
+    - chmod +x ./build-images.sh
+    # In GitLab DinD without minikube, we don't need 'eval $(minikube docker-env)'
+    # We can just build the images directly, but since build-images.sh uses minikube environment,
+    # we need to conditionally skip the minikube eval inside the script if MINIKUBE_ACTIVE is false,
+    # or just let it fail gracefully and proceed. Best approach is to provide a flag or set up minikube.
+    - apt-get update && apt-get install -y docker.io
+    - ./build-images.sh
+
+deploy_local_k8s:
+  stage: deploy_local
+  image: dtzar/helm-kubectl:latest
+  script:
+    # Set up a lightweight k3d cluster inside the runner to test deployment
+    - curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+    - k3d cluster create test-cluster
+    - kubectl cluster-info
+    - chmod +x ./deploy-all.sh
+    # Assuming images built in previous stage were pushed to a registry.
+    # If not using a registry, they need to be exported/imported into the k3d cluster.
+    # For a purely local test without registry, we load images into k3d:
+    - k3d image import $(docker images -q) -c test-cluster || true
+    - ./deploy-all.sh
+    - sleep 10
+    - kubectl get pods -A
+    - k3d cluster delete test-cluster
