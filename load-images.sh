@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-DOCKER="/Applications/Docker.app/Contents/Resources/bin/docker"
+DOCKER=$(which docker || echo "/Applications/Docker.app/Contents/Resources/bin/docker")
 MINIKUBE_CONTAINER="minikube"
 
 # All microservice image names (bash 3 compatible)
@@ -15,6 +15,7 @@ IMAGES=(
   "springbootapps-payment-service:latest"
   "springbootapps-common-service:latest"
   "springbootapps-employee-service:latest"
+  "springbootapps-react-frontend:latest"
 )
 
 echo "=============================================="
