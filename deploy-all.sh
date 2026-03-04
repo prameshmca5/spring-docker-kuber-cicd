@@ -4,6 +4,7 @@ set -e
 NAMESPACE="backend"
 CHART_DIR="./helm-charts/banking-service"
 KUBECTL=$(which kubectl || echo "kubectl")
+HELM=$(which helm || echo "helm")
 
 SERVICES=(
   "discovery-server"
@@ -25,7 +26,13 @@ done
 
 echo "All microservices deployed successfully!"
 
-# Monitoring Stack
-echo "=> Deploying monitoring stack..."
-$HELM apply -f ./helm-charts/monitoring-stack.yaml 2>/dev/null || $KUBECTL apply -f ./helm-charts/monitoring-stack.yaml
-$KUBECTL apply -f ./helm-charts/monitoring-ingress.yaml
+# Monitoring Stack (only if manifest files exist)
+if [ -f "./helm-charts/monitoring-stack.yaml" ]; then
+  echo "=> Deploying monitoring stack..."
+  $KUBECTL apply -f ./helm-charts/monitoring-stack.yaml 2>/dev/null || true
+fi
+
+if [ -f "./helm-charts/monitoring-ingress.yaml" ]; then
+  echo "=> Deploying monitoring ingress..."
+  $KUBECTL apply -f ./helm-charts/monitoring-ingress.yaml 2>/dev/null || true
+fi

@@ -17,11 +17,24 @@ services:
       # Mount the project directory so we can run scripts from it easily (optional, helpful for local)
       - ${PWD}:/workspace
       # Mount minikube and kube config for kubectl and helm access
+      # ~/.kube is mounted read-only; we use a custom kubeconfig at /var/jenkins_home/minikube-kubeconfig
       - ~/.kube:/root/.kube:ro
-      - ~/.minikube:/Users/rohit/.minikube:ro
+      # IMPORTANT: mount to /root/.minikube (not /Users/rohit/.minikube) so cert paths in kubeconfig resolve
+      - ~/.minikube:/root/.minikube:ro
     environment:
       - DOCKER_HOST=unix:///var/run/docker.sock
+      # Custom kubeconfig with correct paths and minikube container IP
+      - KUBECONFIG=/var/jenkins_home/minikube-kubeconfig
+    networks:
+      - default
+      - minikube # Join minikube network so Jenkins can reach k8s API at 192.168.49.2:8443
     restart: unless-stopped
 
 volumes:
   jenkins_home:
+
+
+networks:
+  default: {}
+  minikube:
+    external: true # The 'minikube' network is created by minikube
