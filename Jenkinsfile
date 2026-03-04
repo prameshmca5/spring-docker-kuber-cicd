@@ -1,21 +1,24 @@
 pipeline {
     agent any
 
+    // ✅ REMOVED tools {} block entirely
+    // We use ./mvnw wrapper instead of a globally configured Maven/JDK tool
+    // If JDK is needed, install it directly on the Jenkins agent/container
+
     environment {
-        // Fixed kubeconfig: correct cert paths (/root/.minikube) + correct API server (192.168.49.2:8443)
-        KUBECONFIG        = "/var/jenkins_home/minikube-kubeconfig"
-        // Docker via socket (Jenkins mounts /var/run/docker.sock from host)
-        DOCKER_HOST       = "unix:///var/run/docker.sock"
-        // Project workspace
-        PROJECT_DIR       = "${WORKSPACE}"
+        KUBECONFIG              = "/root/.kube/config"
+        DOCKER_TLS_VERIFY       = "1"
+        DOCKER_HOST             = "tcp://192.168.49.2:2376"
+        DOCKER_CERT_PATH        = "/root/.minikube/certs"
+        MINIKUBE_ACTIVE_DOCKERD = "minikube"
+        PROJECT_DIR             = "${WORKSPACE}"
+        JAVA_HOME               = "/usr/lib/jvm/java-17-openjdk-amd64"  // ✅ Set manually
+        PATH                    = "${JAVA_HOME}/bin:${PATH}"
     }
 
     options {
-        // Keep last 5 builds
         buildDiscarder(logRotator(numToKeepStr: '5'))
-        // Timeout entire pipeline after 30 minutes
         timeout(time: 30, unit: 'MINUTES')
-        // Prevent concurrent builds
         disableConcurrentBuilds()
         timestamps()
     }
@@ -28,43 +31,6 @@ pipeline {
             steps {
                 echo '📥 Checking out source code...'
                 checkout scm
-            }
-        }
-
-        // ─────────────────────────────────────────────
-        stage('Setup Kubeconfig') {
-            // ─────────────────────────────────────────────
-            steps {
-                echo '⚙️ Generating minikube kubeconfig with correct paths...'
-                sh '''
-                    # Write a fixed kubeconfig that:
-                    # 1. Uses /root/.minikube/... cert paths (minikube is mounted here)
-                    # 2. Uses 192.168.49.2:8443 (minikube container IP, reachable via minikube docker network)
-                    cat > /var/jenkins_home/minikube-kubeconfig << KUBEEOF
-apiVersion: v1
-clusters:
-- cluster:
-    certificate-authority: /root/.minikube/ca.crt
-    server: https://192.168.49.2:8443
-  name: minikube
-contexts:
-- context:
-    cluster: minikube
-    namespace: default
-    user: minikube
-  name: minikube
-current-context: minikube
-kind: Config
-preferences: {}
-users:
-- name: minikube
-  user:
-    client-certificate: /root/.minikube/profiles/minikube/client.crt
-    client-key: /root/.minikube/profiles/minikube/client.key
-KUBEEOF
-                    echo "✅ Kubeconfig written to /var/jenkins_home/minikube-kubeconfig"
-                    cat /var/jenkins_home/minikube-kubeconfig
-                '''
             }
         }
 
@@ -90,11 +56,8 @@ KUBEEOF
                     echo "=== Helm Version ==="
                     helm version
 
-                    echo "=== Kubernetes Cluster Info ==="
-                    kubectl cluster-info
-
-                    echo "=== Minikube Container Status ==="
-                    docker inspect minikube --format "Status: {{.State.Status}}" || echo "minikube container not visible"
+                    echo "=== Minikube Status ==="
+                    minikube status
                 '''
             }
         }
@@ -114,7 +77,6 @@ KUBEEOF
             post {
                 success {
                     echo '✅ JAR build completed successfully.'
-                    // Archive built JARs as artifacts
                     archiveArtifacts artifacts: '**/target/*.jar',
                     allowEmptyArchive: true,
                     fingerprint: true
@@ -175,8 +137,6 @@ KUBEEOF
                 sh '''
                     chmod +x deploy-all.sh
                     chmod +x deploy-service.sh
-                    # Ensure backend namespace exists before deploying
-                    kubectl get namespace backend || kubectl create namespace backend
                     ./deploy-all.sh
                 '''
             }
@@ -221,7 +181,6 @@ KUBEEOF
         // ─────────────────────────────────────────────
         always {
             echo '🏁 Pipeline execution completed.'
-            // Print final pod status regardless of outcome
             sh '''
                 echo "=== Final Pod Status ==="
                 kubectl get pods -n backend || true
@@ -231,7 +190,6 @@ KUBEEOF
             echo '''
             ╔══════════════════════════════════════════╗
             ║   ✅ DEPLOYMENT SUCCESSFUL               ║
-            ║   Check pods:                            ║
             ║   kubectl get pods -n backend            ║
             ║   minikube dashboard                     ║
             ╚══════════════════════════════════════════╝
@@ -241,14 +199,10 @@ KUBEEOF
             echo '''
             ╔══════════════════════════════════════════╗
             ║   ❌ DEPLOYMENT FAILED                   ║
-            ║   Review the stage logs above.           ║
-            ║   Run: kubectl describe pods -n backend  ║
-            ║   Run: kubectl logs <pod> -n backend     ║
+            ║   kubectl describe pods -n backend       ║
+            ║   kubectl logs <pod> -n backend          ║
             ╚══════════════════════════════════════════╝
             '''
-        }
-        unstable {
-            echo '⚠️ Pipeline is unstable. Some tests or checks may have failed.'
         }
     }
 }
