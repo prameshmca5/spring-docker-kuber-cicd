@@ -25,7 +25,7 @@ data:
         uid: prometheus
         access: proxy
         url: http://prometheus.monitoring.svc.cluster.local:9090
-        isDefault: false
+        isDefault: true
         jsonData:
           timeInterval: "15s"
       - name: Loki
@@ -33,13 +33,7 @@ data:
         uid: loki
         access: proxy
         url: http://loki.monitoring.svc.cluster.local:3100
-        isDefault: true
-        jsonData:
-          derivedFields:
-            - datasourceUid: prometheus
-              matcherRegex: '"trace":"([^"]+)"'
-              name: TraceID
-              url: '$${__value.raw}'
+        isDefault: false
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -50,11 +44,12 @@ data:
   dashboards.yaml: |
     apiVersion: 1
     providers:
-      - name: 'default'
+      - name: 'Spring Boot'
         orgId: 1
         folder: 'Spring Boot'
         type: file
         disableDeletion: false
+        updateIntervalSeconds: 30
         options:
           path: /var/lib/grafana/dashboards
 ---
@@ -103,6 +98,8 @@ spec:
               mountPath: /etc/grafana/provisioning/datasources
             - name: grafana-dashboards-provider
               mountPath: /etc/grafana/provisioning/dashboards
+            - name: grafana-dashboards-files
+              mountPath: /var/lib/grafana/dashboards
           resources:
             requests:
               cpu: 100m
@@ -132,6 +129,9 @@ spec:
         - name: grafana-dashboards-provider
           configMap:
             name: grafana-dashboards-provider
+        - name: grafana-dashboards-files
+          configMap:
+            name: grafana-dashboards-files
 ---
 apiVersion: v1
 kind: Service

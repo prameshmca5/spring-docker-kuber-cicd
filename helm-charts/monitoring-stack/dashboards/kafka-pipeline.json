@@ -1,0 +1,319 @@
+{
+    "title": "Kafka + Notification Pipeline",
+    "uid": "kafka-pipeline",
+    "version": 1,
+    "refresh": "10s",
+    "time": {
+        "from": "now-1h",
+        "to": "now"
+    },
+    "panels": [
+        {
+            "id": 1,
+            "title": "Kafka Topics Available",
+            "type": "stat",
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 0,
+                "y": 0
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "blue",
+                        "mode": "fixed"
+                    }
+                }
+            },
+            "targets": [
+                {
+                    "expr": "count(kafka_topic_partitions)",
+                    "legendFormat": "Topics",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "title": "Kafka Consumer Groups",
+            "type": "stat",
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 6,
+                "y": 0
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "green",
+                        "mode": "fixed"
+                    }
+                }
+            },
+            "targets": [
+                {
+                    "expr": "count(kafka_consumergroup_members)",
+                    "legendFormat": "Groups",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
+                }
+            ]
+        },
+        {
+            "id": 3,
+            "title": "Consumer Lag (notification-group)",
+            "type": "stat",
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 12,
+                "y": 0
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "value": 0,
+                                "color": "green"
+                            },
+                            {
+                                "value": 10,
+                                "color": "yellow"
+                            },
+                            {
+                                "value": 100,
+                                "color": "red"
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "targets": [
+                {
+                    "expr": "sum(kafka_consumergroup_lag{consumergroup=\"notification-group\"})",
+                    "legendFormat": "Lag",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
+                }
+            ]
+        },
+        {
+            "id": 4,
+            "title": "Total Kafka Messages In Rate",
+            "type": "stat",
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 18,
+                "y": 0
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "mps",
+                    "color": {
+                        "fixedColor": "purple",
+                        "mode": "fixed"
+                    }
+                }
+            },
+            "targets": [
+                {
+                    "expr": "sum(rate(kafka_topic_partition_current_offset[1m]))",
+                    "legendFormat": "msg/s",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
+                }
+            ]
+        },
+        {
+            "id": 5,
+            "title": "Messages per Topic (payment.created, account.created, transaction.created)",
+            "type": "timeseries",
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 4
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "short",
+                    "color": {
+                        "mode": "palette-classic"
+                    }
+                }
+            },
+            "targets": [
+                {
+                    "expr": "kafka_topic_partition_current_offset{topic=~\"payment.created|account.created|transaction.created\"}",
+                    "legendFormat": "{{topic}} partition={{partition}}",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
+                }
+            ]
+        },
+        {
+            "id": 6,
+            "title": "Consumer Lag Over Time (notification-group)",
+            "type": "timeseries",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 12
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "short",
+                    "color": {
+                        "mode": "palette-classic"
+                    }
+                }
+            },
+            "targets": [
+                {
+                    "expr": "kafka_consumergroup_lag{consumergroup=\"notification-group\"}",
+                    "legendFormat": "{{topic}} lag",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
+                }
+            ]
+        },
+        {
+            "id": 7,
+            "title": "Payment Service Kafka Events Published",
+            "type": "timeseries",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 12
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "short",
+                    "color": {
+                        "fixedColor": "#FF6B6B",
+                        "mode": "fixed"
+                    }
+                }
+            },
+            "targets": [
+                {
+                    "expr": "rate(kafka_topic_partition_current_offset{topic=\"payment.created\"}[1m])",
+                    "legendFormat": "payment events/s",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
+                }
+            ]
+        },
+        {
+            "id": 8,
+            "title": "Notification Service — Kafka Messages Consumed Rate",
+            "type": "timeseries",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 20
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "reqps",
+                    "color": {
+                        "fixedColor": "#4ECDC4",
+                        "mode": "fixed"
+                    }
+                }
+            },
+            "targets": [
+                {
+                    "expr": "rate(http_server_requests_seconds_count{service=\"notification-service\", uri=\"/api/v1/notifications\"}[1m])",
+                    "legendFormat": "notifications saved/s",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
+                }
+            ]
+        },
+        {
+            "id": 9,
+            "title": "Kafka Broker Availability",
+            "type": "stat",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 20
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "mappings": [
+                        {
+                            "type": "value",
+                            "options": {
+                                "1": {
+                                    "text": "ONLINE",
+                                    "color": "green"
+                                },
+                                "0": {
+                                    "text": "OFFLINE",
+                                    "color": "red"
+                                }
+                            }
+                        }
+                    ],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "value": 0,
+                                "color": "red"
+                            },
+                            {
+                                "value": 1,
+                                "color": "green"
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "targets": [
+                {
+                    "expr": "up{job=\"kafka-exporter\"}",
+                    "legendFormat": "Kafka Broker",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    }
+                }
+            ]
+        }
+    ]
+}
