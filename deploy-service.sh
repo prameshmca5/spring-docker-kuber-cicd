@@ -25,11 +25,13 @@ if [ -f "$ENV_VALUES" ]; then
   $HELM upgrade --install "$SERVICE" "$CHART_DIR" \
     -f "$VALUES_FILE" \
     -f "$ENV_VALUES" \
-    --namespace "$NAMESPACE"
+    --namespace "$NAMESPACE" \
+    --set image.tag="${IMAGE_VERSION:-latest}"
 else
   $HELM upgrade --install "$SERVICE" "$CHART_DIR" \
     -f "$VALUES_FILE" \
-    --namespace "$NAMESPACE"
+    --namespace "$NAMESPACE" \
+    --set image.tag="${IMAGE_VERSION:-latest}"
 fi
 
 echo "$SERVICE deployed successfully!"

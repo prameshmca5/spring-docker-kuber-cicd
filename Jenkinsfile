@@ -206,7 +206,8 @@ KUBEEOF
             steps {
                 echo '🚀 Deploying Frontend to Kubernetes via Helm...'
                 sh '''
-                    helm upgrade --install springbootapp-frontend ./helm-charts/springbootapp-frontend --namespace frontend --create-namespace
+                    helm upgrade --install springbootapp-frontend ./helm-charts/springbootapp-frontend --namespace frontend --create-namespace \
+                        --set image.tag="${IMAGE_VERSION:-latest}"
                 '''
             }
         }
