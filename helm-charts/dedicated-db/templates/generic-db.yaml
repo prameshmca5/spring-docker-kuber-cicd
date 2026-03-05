@@ -124,6 +124,19 @@ spec:
 {{- end }}
 
 {{- if eq .Values.type "db2" -}}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.name }}-pvc
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -166,4 +179,11 @@ spec:
               name: db2
           securityContext:
             privileged: true
+          volumeMounts:
+            - name: {{ .Values.name }}-storage
+              mountPath: /database
+      volumes:
+        - name: {{ .Values.name }}-storage
+          persistentVolumeClaim:
+            claimName: {{ .Values.name }}-pvc
 {{- end }}
