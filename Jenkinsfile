@@ -54,7 +54,7 @@ apiVersion: v1
 clusters:
 - cluster:
     certificate-authority: /Users/rohit/.minikube/ca.crt
-    server: https://192.168.49.2:8443
+    server: https://127.0.0.1:49790
   name: minikube
 contexts:
 - context:
@@ -83,7 +83,7 @@ KUBEEOF
                     echo "=== System Info ==="
                     java -version 2>&1 | head -n 1
                     docker --version
-                    kubectl version --client --short
+                    kubectl version --client
                     helm version --short
                 '''
             }
