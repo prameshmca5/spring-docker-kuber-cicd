@@ -22,6 +22,7 @@ pipeline {
     parameters {
         booleanParam(name: 'SKIP_TESTS', defaultValue: true, description: 'Skip running tests')
         booleanParam(name: 'CLEAN_BUILD', defaultValue: true, description: 'Perform clean build')
+        booleanParam(name: 'DEPLOY_BACKEND', defaultValue: true, description: 'Deploy Backend via Helm')
         booleanParam(name: 'DEPLOY_FRONTEND', defaultValue: true, description: 'Deploy Frontend via Helm')
         booleanParam(name: 'DEPLOY_DATABASE', defaultValue: false, description: 'Deploy Database Infrastructure')
         choice(name: 'DEPLOY_ENVIRONMENT', choices: ['dev', 'staging', 'prod'], description: 'Deployment environment')
@@ -185,6 +186,9 @@ KUBEEOF
         }
 
         stage('Deploy Backend via Helm') {
+            when {
+                expression { params.DEPLOY_BACKEND }
+            }
             steps {
                 echo '🚀 Deploying to Kubernetes via Helm...'
                 sh '''
