@@ -41,3 +41,39 @@ echo "   All images loaded into Minikube!"
 echo "   Verifying..."
 $DOCKER exec "$MINIKUBE_CONTAINER" docker images | grep springbootapps
 echo "=============================================="
+
+# ─────────────────────────────────────────────────
+# Load External (3rd-party) images into Minikube
+# These are official images that must be available
+# inside Minikube with imagePullPolicy: IfNotPresent
+# ─────────────────────────────────────────────────
+EXTERNAL_IMAGES=(
+  "apache/kafka:3.8.1"
+  "grafana/grafana:10.3.3"
+  "grafana/loki:2.9.4"
+  "grafana/promtail:2.9.4"
+  "prom/prometheus:v2.50.1"
+  "danielqsj/kafka-exporter:latest"
+)
+
+echo ""
+echo "=============================================="
+echo "   Loading External Images into Minikube"
+echo "   (Kafka, Grafana, Prometheus, Loki, etc.)"
+echo "=============================================="
+
+for EXT_IMAGE in "${EXTERNAL_IMAGES[@]}"; do
+  echo ""
+  echo "=> Pulling '$EXT_IMAGE' from Docker Hub..."
+  $DOCKER pull "$EXT_IMAGE" || { echo "   ⚠️  Pull failed for $EXT_IMAGE — skipping"; continue; }
+
+  echo "=> Loading '$EXT_IMAGE' into Minikube..."
+  $DOCKER save "$EXT_IMAGE" | $DOCKER exec -i "$MINIKUBE_CONTAINER" docker load
+  echo "   ✔ Done: $EXT_IMAGE"
+done
+
+echo ""
+echo "=============================================="
+echo "   External images loaded! ✔"
+echo "=============================================="
+
