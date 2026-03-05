@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Landmark, User, Bell, LayoutDashboard, CreditCard, ArrowRightLeft, Settings, LogOut, AlertTriangle, MessageSquare } from 'lucide-react';
+import { Landmark, User, Bell, LayoutDashboard, CreditCard, ArrowRightLeft, Settings, LogOut, AlertTriangle, MessageSquare, Wallet } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import NotificationService from '../services/NotificationService';
 
@@ -71,6 +71,11 @@ const BankingDashboard = () => {
                             <li className="nav-item me-3">
                                 <NavLink className={({ isActive }) => `nav-link d-flex align-items-center ${isActive ? 'active fw-bold' : 'text-white-50 hover-opacity'}`} to="/dashboard/transfers">
                                     <ArrowRightLeft size={18} className="me-2" /> Transfers
+                                </NavLink>
+                            </li>
+                            <li className="nav-item me-3">
+                                <NavLink className={({ isActive }) => `nav-link d-flex align-items-center ${isActive ? 'active fw-bold' : 'text-white-50 hover-opacity'}`} to="/dashboard/payments">
+                                    <Wallet size={18} className="me-2" /> Payments
                                 </NavLink>
                             </li>
                             <li className="nav-item">
