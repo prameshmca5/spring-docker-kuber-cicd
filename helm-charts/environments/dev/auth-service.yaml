@@ -1,0 +1,6 @@
+appConfig:
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://springbootapp-db-postgres.db.svc.cluster.local:5432/employee_db"
+  SPRING_DATASOURCE_USERNAME: "postgres"
+  SPRING_DATASOURCE_PASSWORD: "root"
+service:
+  port: 8089

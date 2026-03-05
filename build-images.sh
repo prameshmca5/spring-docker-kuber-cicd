@@ -16,8 +16,8 @@ SERVICES=(
   "transaction-service:springbootapps-transaction-service"
   "notification-service:springbootapps-notification-service"
   "payment-service:springbootapps-payment-service"
-  "common-service:springbootapps-common-service"
   "employee-service:springbootapps-employee-service"
+  "auth-service:springbootapps-auth-service"
 )
 
 echo "=============================================="

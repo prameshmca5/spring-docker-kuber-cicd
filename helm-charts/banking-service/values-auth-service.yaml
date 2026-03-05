@@ -1,0 +1,8 @@
+serviceName: "auth-service"
+image:
+  repository: "springbootapps-auth-service"
+  pullPolicy: Never
+  tag: "latest"
+service:
+  type: ClusterIP
+  port: 8089

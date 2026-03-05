@@ -17,6 +17,7 @@ IMAGES=(
   "springbootapps-payment-service:${IMAGE_TAG}"
   "springbootapps-common-service:${IMAGE_TAG}"
   "springbootapps-employee-service:${IMAGE_TAG}"
+  "springbootapps-auth-service:${IMAGE_TAG}"
   "springbootapps-react-frontend:${IMAGE_TAG}"
 )
 

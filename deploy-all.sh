@@ -16,6 +16,7 @@ SERVICES=(
   "payment-service"
   "employee-service"
   "common-service"
+  "auth-service"
 )
 
 echo "Deploying Banking Ecosystem to namespace: $NAMESPACE"
