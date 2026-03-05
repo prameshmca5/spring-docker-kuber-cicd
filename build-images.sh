@@ -5,6 +5,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOCKER=$(which docker || echo "docker")
 MINIKUBE=$(which minikube || echo "minikube")
 
+IMAGE_TAG=${1:-"latest"}
+
 # All microservice modules → image name (bash 3 compatible)
 SERVICES=(
   "discovery-server:springbootapps-discovery-server"
@@ -26,7 +28,7 @@ echo "=============================================="
 for ENTRY in "${SERVICES[@]}"; do
   MODULE="${ENTRY%%:*}"
   IMAGE_BASE="${ENTRY##*:}"
-  IMAGE_NAME="${IMAGE_BASE}:latest"
+  IMAGE_NAME="${IMAGE_BASE}:${IMAGE_TAG}"
 
   echo ""
   echo "=> [1/2] Building Docker image: $IMAGE_NAME  (module: $MODULE)"
@@ -52,16 +54,16 @@ echo "   All images built and loaded into Minikube!"
 echo "=============================================="
 
 echo ""
-echo "=> Building frontend image: springbootapps-react-frontend:latest"
+echo "=> Building frontend image: springbootapps-react-frontend:${IMAGE_TAG}"
 $DOCKER build \
-  -t "springbootapps-react-frontend:latest" \
+  -t "springbootapps-react-frontend:${IMAGE_TAG}" \
   "$SCRIPT_DIR/react-frontend"
 
 if [ -x "$(command -v minikube)" ]; then
-  $MINIKUBE image load springbootapps-react-frontend:latest
-  echo "   ✔ Done: springbootapps-react-frontend:latest (loaded into Minikube)"
+  $MINIKUBE image load "springbootapps-react-frontend:${IMAGE_TAG}"
+  echo "   ✔ Done: springbootapps-react-frontend:${IMAGE_TAG} (loaded into Minikube)"
 else
-  echo "   ✔ Done: springbootapps-react-frontend:latest (Minikube load skipped)"
+  echo "   ✔ Done: springbootapps-react-frontend:${IMAGE_TAG} (Minikube load skipped)"
 fi
 
 echo ""
