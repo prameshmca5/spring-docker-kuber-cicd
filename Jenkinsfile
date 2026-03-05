@@ -10,6 +10,8 @@ pipeline {
         BUILD_TIMESTAMP = sh(script: 'date +%Y%m%d%H%M%S', returnStdout: true).trim()
         GIT_COMMIT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
         GIT_BRANCH = sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
+        POM_VERSION = sh(script: 'chmod +x mvnw && ./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout || echo ""', returnStdout: true).trim()
+        IMAGE_VERSION = "${POM_VERSION == '' || POM_VERSION.contains('\$') || POM_VERSION.contains('SNAPSHOT') ? BUILD_TIMESTAMP + '-' + GIT_COMMIT : POM_VERSION}"
     }
 
     options {
@@ -131,16 +133,10 @@ KUBEEOF
             steps {
                 echo '🐳 Building Docker images...'
                 script {
-                    def version = sh(script: './mvnw help:evaluate -Dexpression=project.version -q -DforceStdout', returnStdout: true).trim()
-                    if (version == "" || version.contains("\$") || version.contains("SNAPSHOT")) {
-                        version = "${BUILD_TIMESTAMP}-${GIT_COMMIT}"
-                    }
-                    env.IMAGE_VERSION = version
-                    
                     sh """
-                        echo "Building images with version: ${version}"
+                        echo "Building images with version: ${env.IMAGE_VERSION}"
                         chmod +x build-images.sh
-                        ./build-images.sh ${version}
+                        ./build-images.sh ${env.IMAGE_VERSION}
                     """
                 }
             }
