@@ -18,14 +18,27 @@ public class NotificationKafkaListener {
     @KafkaListener(topics = { "account.created", "transaction.created",
             "payment.created" }, groupId = "notification-group")
     public void handleNotificationEvent(NotificationEvent event) {
-        log.info("Received Kafka Event: topic={}, customerId={}, message={}",
-                event.eventType(), event.customerId(), event.message());
+        log.info("Received Kafka Event: topic={}, customerId={}, eventType={}",
+                event.eventType(), event.customerId(), event.eventType());
+
+        // Resolve template by event type
+        NotificationTemplate template = NotificationTemplate.fromEventType(event.eventType());
+
+        // Build resolved message: use metadata placeholders if provided, fall back to
+        // raw message
+        String resolvedMessage = (event.metadata() != null && !event.metadata().isEmpty())
+                ? template.resolve(event.metadata())
+                : (event.message() != null ? event.message() : template.resolve(null));
 
         Notification notification = new Notification();
         notification.setCustomerId(event.customerId());
-        notification.setMessage(event.message());
+        notification.setEventType(event.eventType());
+        notification.setTitle(template.getTitle());
+        notification.setMessage(resolvedMessage);
+        notification.setRead(false);
 
         notificationRepository.save(notification);
-        log.info("Saved notification to database for customer ID: {}", event.customerId());
+        log.info("Saved notification [{}] for customerId={}: title='{}', message='{}'",
+                event.eventType(), event.customerId(), template.getTitle(), resolvedMessage);
     }
 }

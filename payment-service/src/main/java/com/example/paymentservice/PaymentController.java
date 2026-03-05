@@ -8,6 +8,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/payments")
@@ -55,11 +56,17 @@ public class PaymentController {
         Payment saved = repository.save(p);
         log.info("Payment created with ID: {}", saved.getId());
 
-        // Publish async notification event
+        // Build metadata for the notification template
+        Map<String, String> metadata = new java.util.HashMap<>();
+        metadata.put("amount", String.format("%.2f", saved.getAmount()));
+        metadata.put("paymentId", String.valueOf(saved.getId()));
+
+        // Publish async notification event with template metadata
         NotificationEvent event = new NotificationEvent(
                 saved.getAccountId(),
                 "PAYMENT_CREATED",
-                String.format("Payment of amount %.2f processed successfully", saved.getAmount()));
+                null,
+                metadata);
         kafkaTemplate.send(TOPIC, String.valueOf(saved.getId()), event);
         log.info("Published PAYMENT_CREATED event to topic '{}' for accountId={}", TOPIC, saved.getAccountId());
 

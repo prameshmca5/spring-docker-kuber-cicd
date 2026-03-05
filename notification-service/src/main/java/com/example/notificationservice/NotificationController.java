@@ -1,13 +1,15 @@
 package com.example.notificationservice;
 
+import jakarta.transaction.Transactional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/notifications")
+@CrossOrigin(origins = "*")
 public class NotificationController {
 
     private final NotificationRepository notificationRepository;
@@ -16,16 +18,41 @@ public class NotificationController {
         this.notificationRepository = notificationRepository;
     }
 
-    @GetMapping("/{customerId}")
-    public ResponseEntity<List<Notification>> getNotifications(@PathVariable Long customerId) {
-        // Find all notifications and filter by customerId (normally you'd put a finder
-        // in repository, doing this for speed since repo is minimal)
-        List<Notification> customerNotifications = notificationRepository.findAll()
-                .stream()
-                .filter(n -> n.getCustomerId().equals(customerId))
-                .sorted((n1, n2) -> n2.getTimestamp().compareTo(n1.getTimestamp())) // Newest first
-                .collect(Collectors.toList());
+    /** GET all notifications for a customer (newest first) */
+    @GetMapping("/customer/{customerId}")
+    public ResponseEntity<List<Notification>> getAll(@PathVariable Long customerId) {
+        return ResponseEntity.ok(notificationRepository.findByCustomerIdOrderByTimestampDesc(customerId));
+    }
 
-        return ResponseEntity.ok(customerNotifications);
+    /** GET only unread notifications for a customer */
+    @GetMapping("/customer/{customerId}/unread")
+    public ResponseEntity<List<Notification>> getUnread(@PathVariable Long customerId) {
+        return ResponseEntity.ok(notificationRepository.findByCustomerIdAndReadFalseOrderByTimestampDesc(customerId));
+    }
+
+    /** GET unread count badge for a customer */
+    @GetMapping("/customer/{customerId}/unread/count")
+    public ResponseEntity<Map<String, Long>> getUnreadCount(@PathVariable Long customerId) {
+        long count = notificationRepository.countByCustomerIdAndReadFalse(customerId);
+        return ResponseEntity.ok(Map.of("unreadCount", count));
+    }
+
+    /** PUT mark a single notification as read */
+    @PutMapping("/{id}/read")
+    public ResponseEntity<Notification> markRead(@PathVariable Long id) {
+        return notificationRepository.findById(id)
+                .map(n -> {
+                    n.setRead(true);
+                    return ResponseEntity.ok(notificationRepository.save(n));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    /** PUT mark ALL notifications as read for a customer */
+    @Transactional
+    @PutMapping("/customer/{customerId}/read-all")
+    public ResponseEntity<Map<String, Integer>> markAllRead(@PathVariable Long customerId) {
+        int updated = notificationRepository.markAllReadByCustomerId(customerId);
+        return ResponseEntity.ok(Map.of("markedAsRead", updated));
     }
 }

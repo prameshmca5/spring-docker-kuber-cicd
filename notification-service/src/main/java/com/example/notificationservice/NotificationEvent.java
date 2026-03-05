@@ -1,5 +1,7 @@
 package com.example.notificationservice;
 
+import java.util.Map;
+
 /**
  * Event DTO received from Kafka topics:
  * - account.created
@@ -9,7 +11,8 @@ package com.example.notificationservice;
  * Must match the NotificationEvent record shape in each producer service.
  */
 public record NotificationEvent(
-        Long customerId,
-        String eventType,
-        String message) {
+                Long customerId,
+                String eventType,
+                String message,
+                Map<String, String> metadata) {
 }
