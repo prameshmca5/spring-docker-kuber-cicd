@@ -22,6 +22,8 @@ pipeline {
     parameters {
         booleanParam(name: 'SKIP_TESTS', defaultValue: true, description: 'Skip running tests')
         booleanParam(name: 'CLEAN_BUILD', defaultValue: true, description: 'Perform clean build')
+        booleanParam(name: 'DEPLOY_FRONTEND', defaultValue: true, description: 'Deploy Frontend via Helm')
+        booleanParam(name: 'DEPLOY_DATABASE', defaultValue: false, description: 'Deploy Database Infrastructure')
         choice(name: 'DEPLOY_ENVIRONMENT', choices: ['dev', 'staging', 'prod'], description: 'Deployment environment')
     }
 
@@ -169,13 +171,38 @@ KUBEEOF
             }
         }
 
-        stage('Deploy via Helm') {
+        stage('Deploy Database') {
+            when {
+                expression { params.DEPLOY_DATABASE }
+            }
+            steps {
+                echo '🚀 Deploying Database Infrastructure...'
+                sh '''
+                    chmod +x install-db.sh
+                    ./install-db.sh
+                '''
+            }
+        }
+
+        stage('Deploy Backend via Helm') {
             steps {
                 echo '🚀 Deploying to Kubernetes via Helm...'
                 sh '''
                     kubectl create namespace backend --dry-run=client -o yaml | kubectl apply -f -
                     chmod +x deploy-all.sh
                     ./deploy-all.sh --namespace backend
+                '''
+            }
+        }
+
+        stage('Deploy Frontend via Helm') {
+            when {
+                expression { params.DEPLOY_FRONTEND }
+            }
+            steps {
+                echo '🚀 Deploying Frontend to Kubernetes via Helm...'
+                sh '''
+                    helm upgrade --install springbootapp-frontend ./helm-charts/springbootapp-frontend --namespace frontend --create-namespace
                 '''
             }
         }
