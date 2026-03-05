@@ -58,7 +58,7 @@ $DOCKER build \
   "$SCRIPT_DIR/react-frontend"
 
 if [ -x "$(command -v minikube)" ]; then
-  $DOCKER save springbootapps-react-frontend:latest | $MINIKUBE ssh docker load
+  $MINIKUBE image load springbootapps-react-frontend:latest
   echo "   ✔ Done: springbootapps-react-frontend:latest (loaded into Minikube)"
 else
   echo "   ✔ Done: springbootapps-react-frontend:latest (Minikube load skipped)"
