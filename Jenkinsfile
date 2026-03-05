@@ -132,7 +132,7 @@ KUBEEOF
                 echo '🐳 Building Docker images...'
                 script {
                     def version = sh(script: './mvnw help:evaluate -Dexpression=project.version -q -DforceStdout', returnStdout: true).trim()
-                    if (version == "" || version.contains("\$")) {
+                    if (version == "" || version.contains("\$") || version.contains("SNAPSHOT")) {
                         version = "${BUILD_TIMESTAMP}-${GIT_COMMIT}"
                     }
                     env.IMAGE_VERSION = version
