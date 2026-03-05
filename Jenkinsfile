@@ -1,33 +1,138 @@
-    // ─────────────────────────────────────────────
-        stage('Code Quality') {
+    pipeline {
+        agent any
+        
+        environment {
+        KUBECONFIG = "/var/jenkins_home/minikube-kubeconfig"
+        DOCKER_HOST = "unix:///var/run/docker.sock"
+        PROJECT_DIR = "${WORKSPACE}"
+        IMAGE_REGISTRY = "localhost:5000"
+    BUILD_TIMESTAMP = sh(script: 'date +%Y%m%d%H%M%S', returnStdout: true).trim()
+    GIT_COMMIT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+    GIT_BRANCH = sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
+    }
+
+        options {
+    buildDiscarder(logRotator(numToKeepStr: '10', artifactNumToKeepStr: '5'))
+    timeout(time: 30, unit: 'MINUTES')
+        disableConcurrentBuilds()
+        timestamps()
+        ansiColor('xterm')
+    }
+
+        parameters {
+    booleanParam(name: 'SKIP_TESTS', defaultValue: true, description: 'Skip running tests')
+    booleanParam(name: 'CLEAN_BUILD', defaultValue: true, description: 'Perform clean build')
+    choice(name: 'DEPLOY_ENVIRONMENT', choices: ['dev', 'staging', 'prod'], description: 'Deployment environment')
+    }
+
+        stages {
+        stage('Initialize') {
         steps {
-        echo '🔍 Running code quality checks...'
-        sh '''
-      # Run static analysis if configured
-        ./mvnw checkstyle:checkstyle pmd:pmd spotbugs:spotbugs \
-        -DskipTests=${SKIP_TESTS} \
-        --batch-mode \
-        --no-transfer-progress || echo "⚠️ Code quality checks completed (warnings may be present)"
-        '''
-        }
-        post {
-        always {
-    archiveArtifacts artifacts: '**/target/*.xml,**/target/*.html,**/target/*.txt', allowEmptyArchive: true
+        echo '🚀 Starting pipeline execution...'
+        echo "Build #${BUILD_NUMBER} - ${GIT_BRANCH}@${GIT_COMMIT}"
+        script {
+    currentBuild.description = "Branch: ${GIT_BRANCH} | Commit: ${GIT_COMMIT}"
     }
     }
     }
 
-        // ─────────────────────────────────────────────
+        stage('Checkout') {
+        steps {
+        echo '📥 Checking out source code...'
+        checkout scm
+        sh 'git status'
+        sh 'git log -1 --oneline'
+    }
+    }
+
+        stage('Setup Environment') {
+        steps {
+        echo '⚙️ Setting up environment...'
+        sh '''
+        mkdir -p /var/jenkins_home/
+        cat > ${KUBECONFIG} << 'KUBEEOF'
+    apiVersion: v1
+    clusters:
+        - cluster:
+              certificate-authority: /root/.minikube/ca.crt
+              server: https://192.168.49.2:8443
+          name: minikube
+    contexts:
+        - context:
+              cluster: minikube
+              namespace: default
+              user: minikube
+          name: minikube
+    current-context: minikube
+    kind: Config
+    preferences: {}
+    users:
+        - name: minikube
+          user:
+              client-certificate: /root/.minikube/profiles/minikube/client.crt
+              client-key: /root/.minikube/profiles/minikube/client.key
+        KUBEEOF
+        echo "✅ Kubeconfig written to ${KUBECONFIG}"
+        '''
+        }
+        }
+
+        stage('Verify Tools') {
+        steps {
+        echo '🔍 Verifying required tools...'
+        sh '''
+        echo "=== System Info ==="
+        java -version 2>&1 | head -n 1
+        docker --version
+        kubectl version --client --short
+        helm version --short
+        '''
+        }
+        }
+
+        stage('Dependency Check') {
+        when {
+        expression { params.CLEAN_BUILD }
+        }
+        steps {
+        echo '📦 Cleaning and downloading dependencies...'
+        sh '''
+        chmod +x mvnw
+        ./mvnw clean dependency:resolve \
+        -DskipTests=${SKIP_TESTS} \
+        --batch-mode \
+        --no-transfer-progress
+        '''
+        }
+        }
+
+        stage('Build & Test') {
+        steps {
+        echo '🔨 Building and testing...'
+        sh '''
+        chmod +x mvnw
+        ./mvnw package \
+        -DskipTests=${SKIP_TESTS} \
+        --batch-mode \
+        --no-transfer-progress
+        '''
+        }
+        post {
+        success {
+        echo '✅ Build completed successfully.'
+    archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true
+    }
+    }
+    }
+
         stage('Build Docker Images') {
         steps {
         echo '🐳 Building Docker images...'
         script {
-        // Read version from pom.xml or use timestamp
     def version = sh(script: './mvnw help:evaluate -Dexpression=project.version -q -DforceStdout', returnStdout: true).trim()
         if (version == "" || version.contains("\$")) {
         version = "${BUILD_TIMESTAMP}-${GIT_COMMIT}"
     }
-
         env.IMAGE_VERSION = version
         
         sh """
@@ -40,310 +145,82 @@
             post {
                 success {
                     echo '✅ Docker images built successfully.'
-                    sh 'docker images | grep -E "REPOSITORY|microservice"'
-        // Save image list as artifact
-        sh 'docker images > docker-images.txt'
-    archiveArtifacts artifacts: 'docker-images.txt'
-    }
-        failure {
-        echo '❌ Docker image build failed.'
-        // Clean up any partially built images
-        sh 'docker system prune -f || true'
+                    sh 'docker images | grep -E "microservice" || true'
     }
     }
     }
 
-        // ─────────────────────────────────────────────
-        stage('Security Scan') {
-        steps {
-        echo '🛡️ Scanning Docker images for vulnerabilities...'
-        script {
-        try {
-        sh '''
-      # Use Trivy or similar tool for vulnerability scanning
-      # trivy image --exit-code 1 --severity CRITICAL your-image:${IMAGE_VERSION} || echo "⚠️ Vulnerabilities found"
-        echo "Security scanning would run here (Trivy, Grype, etc.)"
-        '''
-    } catch (Exception e) {
-    echo "⚠️ Security scan failed or found issues: ${e.message}"
-        // Continue pipeline but mark as unstable
-        currentBuild.result = 'UNSTABLE'
-    }
-    }
-    }
-    }
-
-        // ─────────────────────────────────────────────
         stage('Load Images to Minikube') {
         steps {
         echo '📦 Loading Docker images into Minikube...'
-        script {
-        try {
         sh '''
         chmod +x load-images.sh
         ./load-images.sh ${IMAGE_VERSION}
-      
-      # Verify images are loaded
-        echo "=== Minikube Images ==="
-        minikube image ls | grep -E "microservice|${IMAGE_VERSION}" || echo "No matching images found"
         '''
-                    } catch (Exception e) {
-                        echo "❌ Failed to load images: ${e.message}"
-                        // Attempt alternative loading method
-                        sh '''
-        echo "Trying alternative image loading method..."
-        eval $(minikube docker-env) && docker images || echo "Alternative method also failed"
-        '''
-                        error("Failed to load images into Minikube")
-                    }
-                }
             }
         }
 
-        // ─────────────────────────────────────────────
         stage('Pre-Deployment Checks') {
         steps {
         echo '🔍 Running pre-deployment validation...'
         sh '''
-        echo "=== Kubernetes Cluster Status ==="
         kubectl cluster-info
-        kubectl get nodes -o wide
-        
-        echo "=== Current Deployments ==="
-        kubectl get deployments,services,pods --all-namespaces
-        
-        echo "=== Resource Availability ==="
-        kubectl top nodes || echo "Metrics server not available"
+        kubectl get nodes
         '''
             }
         }
 
-        // ─────────────────────────────────────────────
         stage('Deploy via Helm') {
         steps {
         echo '🚀 Deploying to Kubernetes via Helm...'
-        script {
-        // Ensure namespace exists
         sh '''
         kubectl create namespace backend --dry-run=client -o yaml | kubectl apply -f -
-        kubectl label namespace backend environment=${DEPLOY_ENVIRONMENT} --overwrite
-        '''
-                    
-                    // Deploy with Helm
-                    sh """
-                        chmod +x deploy-all.sh
-                        chmod +x deploy-service.sh
-                        
-                        # Set image version in values or use --set
-                        ./deploy-all.sh --set image.tag=${IMAGE_VERSION} --namespace backend
-                        
-                        # Alternatively, update values.yaml
-                        # sed -i "s/tag:.*/tag: ${IMAGE_VERSION}/" charts/values.yaml
-                    """
-                }
-            }
-            post {
-                success {
-                    echo '✅ Helm deployment completed successfully.'
-        // Store deployment info
-        sh '''
-        helm list -n backend > helm-releases.txt
-        kubectl get all -n backend > deployment-status.txt
-        '''
-                    archiveArtifacts artifacts: 'helm-releases.txt,deployment-status.txt'
-    }
-    }
-    }
-
-        // ─────────────────────────────────────────────
-        stage('Smoke Tests') {
-        steps {
-        echo '🧪 Running smoke tests...'
-        script {
-    timeout(time: 5, unit: 'MINUTES') {
-                               sh '''
-                               echo "Waiting for services to become ready..."
-      # Wait for all pods to be running
-                               kubectl wait --for=condition=ready pod --all -n backend --timeout=300s
-                               
-                               echo "Running basic connectivity tests..."
-      # Test service endpoints
-                               ./smoke-tests.sh || echo "⚠️ Smoke tests may have issues"
-                               '''
-                    }
-                }
-            }
-            post {
-                always {
-                    // Capture test results
-                    sh '''
-                               kubectl get pods -n backend -o wide > final-pod-status.txt
-                               kubectl describe services -n backend > service-description.txt
-        '''
-                    archiveArtifacts artifacts: 'final-pod-status.txt,service-description.txt'
-    }
-    }
-    }
-
-        // ─────────────────────────────────────────────
-        stage('Integration Tests') {
-        when {
-        expression { !params.SKIP_TESTS }
-    }
-        steps {
-        echo '🧪 Running integration tests...'
-        script {
-    timeout(time: 10, unit: 'MINUTES') {
-                                sh '''
-                                echo "Running integration tests against deployed services..."
-                                ./run-integration-tests.sh || echo "⚠️ Integration tests completed with warnings"
-                                '''
-                    }
-                }
-            }
-            post {
-                always {
-                    junit '**/target/surefire-reports/*.xml,**/target/failsafe-reports/*.xml'
-    archiveArtifacts artifacts: '**/target/*test-report.*'
-    }
-    }
-    }
-
-    } // end stages
-        
-        // ─────────────────────────────────────────────
-        post {
-        // ─────────────────────────────────────────────
-        always {
-        echo '🏁 Pipeline execution completed.'
-        
-        // Cleanup and final reporting
-        script {
-        // Final status report
-        sh '''
-        echo "=== Final Deployment Status ==="
-        kubectl get all -n backend 2>/dev/null || echo "Unable to get deployment status"
-        
-        echo "=== Resource Usage ==="
-        kubectl top pods -n backend 2>/dev/null || echo "Metrics not available"
-        
-        echo "=== Recent Events ==="
-        kubectl get events -n backend --sort-by='.lastTimestamp' 2>/dev/null | tail -10 || echo "Unable to get events"
-        '''
-                
-                // Clean up workspace if needed
-                sh '''
-        docker system prune -f || true
-        rm -f *.txt *.log || true
+        chmod +x deploy-all.sh
+        ./deploy-all.sh --namespace backend
         '''
             }
         }
+
+        stage('Verify Deployment') {
+        steps {
+        echo '🔎 Verifying deployment health...'
+        sh '''
+        echo "=== Pods in backend namespace ==="
+        kubectl get pods -n backend
         
+        echo "=== Waiting for pods to be ready ==="
+        kubectl wait --for=condition=ready pod --all -n backend --timeout=120s || echo "Some pods may not be ready"
+        '''
+            }
+        }
+    }
+
+    post {
+        always {
+            echo '🏁 Pipeline execution completed.'
+        sh '''
+        echo "=== Final Status ==="
+        kubectl get pods -n backend || true
+        '''
+        }
         success {
             echo '''
-        ╔══════════════════════════════════════════════════════════╗
-        ║   ✅ DEPLOYMENT SUCCESSFUL                               ║
-        ║                                                          ║
-                                          ║   Check deployment:                                      ║
-        ║   kubectl get all -n backend                             ║
-        ║   kubectl get services -n backend                        ║
-        ║   minikube service list -n backend                       ║
-        ║                                                          ║
-                                          ║   Version: ${IMAGE_VERSION}                             ║
-                                          ║   Commit: ${GIT_COMMIT}                                 ║
-        ╚══════════════════════════════════════════════════════════╝
+        ╔══════════════════════════════════════════╗
+        ║   ✅ DEPLOYMENT SUCCESSFUL               ║
+        ║   kubectl get pods -n backend            ║
+        ╚══════════════════════════════════════════╝
         '''
-            
-            // Send success notification
-            script {
-                emailext (
-                    subject: "✅ Deployment Successful - ${JOB_NAME} #${BUILD_NUMBER}",
-                    body: """
-                    Deployment completed successfully!
-                    
-                    Project: ${JOB_NAME}
-                    Build: #${BUILD_NUMBER}
-                    Branch: ${GIT_BRANCH}
-                    Commit: ${GIT_COMMIT}
-                    Version: ${env.IMAGE_VERSION}
-                    Environment: ${params.DEPLOY_ENVIRONMENT}
-                    
-                    Deployment Status:
-                    ${sh(script: 'kubectl get pods -n backend -o wide', returnStdout: true)}
-                                                                                                  """,
-                    to: 'dev-team@example.com',
-                    attachLog: true
-                )
-            }
         }
-
         failure {
             echo '''
-            ╔══════════════════════════════════════════════════════════╗
-            ║   ❌ DEPLOYMENT FAILED                                   ║
-            ║                                                          ║
-            ║   Troubleshooting commands:                              ║
-            ║   kubectl describe pods -n backend                       ║
-            ║   kubectl logs <pod-name> -n backend                     ║
-            ║   kubectl get events -n backend                          ║
-            ║   helm status <release-name> -n backend                  ║
-            ║                                                          ║
-            ║   Check pipeline logs for detailed error information.    ║
-            ╚══════════════════════════════════════════════════════════╝
-            '''
-            
-            // Send failure notification
-            script {
-                emailext (
-                    subject: "❌ Deployment Failed - ${JOB_NAME} #${BUILD_NUMBER}",
-                                                                                                  body: """
-                    Deployment failed! Please investigate.
-                    
-                    Project: ${JOB_NAME}
-                    Build: #${BUILD_NUMBER}
-                    Branch: ${GIT_BRANCH}
-                    Error: Check build logs
-                    
-                    Failed stage: ${currentBuild.result}
-                    
-                    Recent logs:
-                    ${sh(script: 'tail -20 ${BUILD_LOG}', returnStdout: true)}
-                    """,
-                                                                                                  to: 'dev-ops@example.com',
-                                                                                                  attachLog: true
-                                                                                                  )
-    }
-    }
-        
-        unstable {
-        echo '''
-        ╔══════════════════════════════════════════════════════════╗
-        ║   ⚠️  PIPELINE UNSTABLE                                 ║
-        ║                                                          ║
-        ║   Some tests failed or quality checks produced warnings. ║
-                                          ║   Deployment completed but review the following:         ║
-        ║   - Test results                                         ║
-        ║   - Code quality reports                                 ║
-        ║   - Security scan results                                ║
-        ║                                                          ║
-        ║   Proceed with caution in production environments.       ║
-        ╚══════════════════════════════════════════════════════════╝
+        ╔══════════════════════════════════════════╗
+        ║   ❌ DEPLOYMENT FAILED                   ║
+        ║   Review logs and troubleshoot           ║
+        ╚══════════════════════════════════════════╝
         '''
         }
-        
-        cleanup {
-            echo '🧹 Cleaning up workspace...'
-        // Clean up temporary files
-        sh '''
-      # Clean Docker resources
-        docker system prune -f || true
-      
-      # Remove temporary files
-        rm -f *.tmp *.log docker-images.txt || true
-      
-      # Preserve important artifacts
-        echo "Build artifacts preserved in Jenkins"
-        '''
+        unstable {
+            echo '⚠️ Pipeline is unstable. Some checks may have failed.'
     }
     }
     }
