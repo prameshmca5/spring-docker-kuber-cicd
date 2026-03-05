@@ -2,9 +2,10 @@ pipeline {
     agent any
 
     environment {
-        KUBECONFIG = "/var/jenkins_home/minikube-kubeconfig"
+        KUBECONFIG = "${WORKSPACE}/minikube-kubeconfig"
         DOCKER_HOST = "unix:///var/run/docker.sock"
         PROJECT_DIR = "${WORKSPACE}"
+        PATH = "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:${env.PATH}"
         IMAGE_REGISTRY = "localhost:5000"
         BUILD_TIMESTAMP = sh(script: 'date +%Y%m%d%H%M%S', returnStdout: true).trim()
         GIT_COMMIT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
@@ -48,13 +49,12 @@ pipeline {
             steps {
                 echo '⚙️ Setting up environment...'
                 sh '''
-                    mkdir -p /var/jenkins_home/
                     cat > ${KUBECONFIG} << 'KUBEEOF'
 apiVersion: v1
 clusters:
 - cluster:
-    certificate-authority: /root/.minikube/ca.crt
-    server: https: //192.168.49.2:8443
+    certificate-authority: /Users/rohit/.minikube/ca.crt
+    server: https://192.168.49.2:8443
   name: minikube
 contexts:
 - context:
@@ -68,8 +68,8 @@ preferences: {}
 users:
 - name: minikube
   user:
-    client-certificate: /root/.minikube/profiles/minikube/client.crt
-    client-key: /root/.minikube/profiles/minikube/client.key
+    client-certificate: /Users/rohit/.minikube/profiles/minikube/client.crt
+    client-key: /Users/rohit/.minikube/profiles/minikube/client.key
 KUBEEOF
                     echo "✅ Kubeconfig written to ${KUBECONFIG}"
                 '''
