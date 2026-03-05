@@ -4,18 +4,20 @@ set -e
 DOCKER=$(which docker || echo "/Applications/Docker.app/Contents/Resources/bin/docker")
 MINIKUBE_CONTAINER="minikube"
 
+IMAGE_TAG=${1:-"latest"}
+
 # All microservice image names (bash 3 compatible)
 IMAGES=(
-  "springbootapps-discovery-server:latest"
-  "springbootapps-api-gateway:latest"
-  "springbootapps-account-service:latest"
-  "springbootapps-customer-service:latest"
-  "springbootapps-transaction-service:latest"
-  "springbootapps-notification-service:latest"
-  "springbootapps-payment-service:latest"
-  "springbootapps-common-service:latest"
-  "springbootapps-employee-service:latest"
-  "springbootapps-react-frontend:latest"
+  "springbootapps-discovery-server:${IMAGE_TAG}"
+  "springbootapps-api-gateway:${IMAGE_TAG}"
+  "springbootapps-account-service:${IMAGE_TAG}"
+  "springbootapps-customer-service:${IMAGE_TAG}"
+  "springbootapps-transaction-service:${IMAGE_TAG}"
+  "springbootapps-notification-service:${IMAGE_TAG}"
+  "springbootapps-payment-service:${IMAGE_TAG}"
+  "springbootapps-common-service:${IMAGE_TAG}"
+  "springbootapps-employee-service:${IMAGE_TAG}"
+  "springbootapps-react-frontend:${IMAGE_TAG}"
 )
 
 echo "=============================================="
