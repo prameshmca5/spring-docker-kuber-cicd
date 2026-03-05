@@ -27,6 +27,7 @@ pipeline {
         booleanParam(name: 'DEPLOY_BACKEND', defaultValue: true, description: 'Deploy Backend via Helm')
         booleanParam(name: 'DEPLOY_FRONTEND', defaultValue: true, description: 'Deploy Frontend via Helm')
         booleanParam(name: 'DEPLOY_DATABASE', defaultValue: false, description: 'Deploy Database Infrastructure')
+        booleanParam(name: 'DEPLOY_MONITORING', defaultValue: false, description: 'Deploy Monitoring Stack (Loki + Promtail + Grafana)')
         choice(name: 'DEPLOY_ENVIRONMENT', choices: ['dev', 'staging', 'prod'], description: 'Deployment environment')
     }
 
@@ -192,6 +193,24 @@ KUBEEOF
                     chmod +x deploy-all.sh
                     ./deploy-all.sh --namespace backend
                 '''
+            }
+        }
+
+        stage('Deploy Monitoring Stack') {
+            when {
+                expression { params.DEPLOY_MONITORING }
+            }
+            steps {
+                echo '📊 Deploying Monitoring Stack (Loki + Promtail + Grafana)...'
+                sh '''
+                    chmod +x install-monitoring.sh
+                    ./install-monitoring.sh
+                '''
+            }
+            post {
+                success {
+                    echo '✅ Monitoring stack deployed. Grafana available at http://$(minikube ip):32000 (admin/admin)'
+                }
             }
         }
 
