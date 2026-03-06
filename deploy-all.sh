@@ -38,8 +38,18 @@ if [ -n "$SELECT_SERVICE" ] && [ "$SELECT_SERVICE" != "ALL" ]; then
     ./deploy-service.sh "$SELECT_SERVICE" "$NAMESPACE"
 else
     echo "=> Deploying all services..."
+    # 1. Deploy discovery-server first
+    ./deploy-service.sh "discovery-server" "$NAMESPACE"
+    
+    # 2. WAIT for discovery-server to be ready before deploying others
+    echo "=> Waiting for discovery-server to be ready..."
+    $KUBECTL wait --for=condition=ready pod -l app=discovery-server -n "$NAMESPACE" --timeout=180s || echo "⚠️ Warning: discovery-server wait timed out, continuing anyway..."
+
+    # 3. Deploy everything else
     for SERVICE in "${SERVICES[@]}"; do
-      ./deploy-service.sh "$SERVICE" "$NAMESPACE"
+      if [ "$SERVICE" != "discovery-server" ]; then
+        ./deploy-service.sh "$SERVICE" "$NAMESPACE"
+      fi
     done
 fi
 
