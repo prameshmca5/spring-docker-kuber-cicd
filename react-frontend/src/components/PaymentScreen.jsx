@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import {
     CreditCard, Lock, CheckCircle, AlertCircle, Loader,
     Shield, ChevronRight, ArrowLeft
@@ -50,8 +50,25 @@ const PaymentScreen = () => {
     });
 
     const [step, setStep] = useState('form');        // 'form' | 'processing' | 'success' | 'error'
-    const [notification, setNotification] = useState(null);
+    const [paymentHistory, setPaymentHistory] = useState([]);
     const [errorMsg, setErrorMsg] = useState('');
+
+    const fetchHistory = async (accountId) => {
+        try {
+            const res = await axios.get(`/api/v1/payments/account/${accountId}`, {
+                headers: { Authorization: `Bearer ${user?.token}` }
+            });
+            setPaymentHistory(res.data || []);
+        } catch (err) {
+            console.error("Failed to fetch payment history", err);
+        }
+    };
+
+    useEffect(() => {
+        if (user?.userId) {
+            fetchHistory(user.userId);
+        }
+    }, [user]);
 
     const handleChange = (e) => {
         let { name, value } = e.target;
@@ -82,24 +99,8 @@ const PaymentScreen = () => {
 
             const payment = response.data;
 
-            // 2. Poll for the notification (give Kafka ~3 seconds to process)
-            await new Promise(r => setTimeout(r, 3000));
-
-            let fetchedNotification = null;
-            try {
-                const notifResp = await axios.get(
-                    `/api/v1/notifications/customer/${payload.accountId}`,
-                    { headers: { Authorization: `Bearer ${user?.token}` } }
-                );
-                fetchedNotification = notifResp.data?.[0] || null;
-            } catch (_) { }
-
-            setNotification(fetchedNotification || {
-                title: 'Payment Processed',
-                message: `Your ${cardType} card payment of $${form.amount} was processed successfully. Payment ID: ${payment.id}`,
-                timestamp: new Date().toISOString(),
-                read: false,
-            });
+            // Refresh history
+            await fetchHistory(payload.accountId);
 
             setStep('success');
         } catch (err) {
@@ -167,24 +168,7 @@ const PaymentScreen = () => {
                         </button>
                     </div>
 
-                    {/* Kafka Notification Toast */}
-                    {notification && (
-                        <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
-                            <div className="card-header d-flex align-items-center gap-2 py-3 px-4"
-                                style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-                                <Bell size={18} className="text-white" />
-                                <span className="fw-semibold text-white">Kafka Notification Received</span>
-                                <span className="ms-auto badge bg-white text-primary">{notification.read ? 'Read' : 'New'}</span>
-                            </div>
-                            <div className="card-body px-4 py-3">
-                                <h6 className="fw-bold mb-1">{notification.title || 'Payment Notification'}</h6>
-                                <p className="text-muted mb-2 small">{notification.message}</p>
-                                <small className="text-muted d-flex align-items-center gap-1">
-                                    <span>📨 Delivered via Kafka → notification-service</span>
-                                </small>
-                            </div>
-                        </div>
-                    )}
+
                 </div>
             </div>
         );
@@ -384,49 +368,48 @@ const PaymentScreen = () => {
                         <span className="text-primary fs-5">${form.amount ? parseFloat(form.amount).toFixed(2) : '0.00'}</span>
                     </div>
                 </div>
+            </div>
 
-                <div className="card border-0 shadow-sm rounded-4 p-4" style={{ background: 'linear-gradient(135deg, #667eea15, #764ba215)' }}>
-                    <h6 className="fw-bold mb-3">After Payment</h6>
-                    <div className="d-flex align-items-start mb-3">
-                        <div className="bg-primary bg-opacity-10 rounded-circle p-2 me-3 mt-1">
-                            <span style={{ fontSize: '0.9rem' }}>📨</span>
+            {/* Payment History */}
+            <div className="col-12 mt-2">
+                <div className="card border-0 shadow-sm rounded-4 p-4">
+                    <h5 className="fw-bold mb-4">Payment History</h5>
+                    {paymentHistory.length === 0 ? (
+                        <p className="text-muted mb-0">No past payments found for your account.</p>
+                    ) : (
+                        <div className="table-responsive">
+                            <table className="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th className="text-muted small fw-semibold border-0">Reference ID</th>
+                                        <th className="text-muted small fw-semibold border-0">Amount</th>
+                                        <th className="text-muted small fw-semibold border-0 text-end">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {paymentHistory.slice().reverse().map(payment => (
+                                        <tr key={payment.id}>
+                                            <td>
+                                                <span className="fw-medium text-dark">#{payment.id}</span>
+                                            </td>
+                                            <td className="fw-bold text-dark">
+                                                ${parseFloat(payment.amount).toFixed(2)}
+                                            </td>
+                                            <td className="text-end">
+                                                <span className={`badge ${payment.status === 'COMPLETED' ? 'bg-success bg-opacity-10 text-success' : 'bg-warning bg-opacity-10 text-warning'} px-3 py-2 rounded-pill fw-semibold`}>
+                                                    {payment.status || 'COMPLETED'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
-                        <div>
-                            <p className="fw-semibold mb-1 small">Kafka Event Published</p>
-                            <p className="text-muted mb-0" style={{ fontSize: '0.75rem' }}>
-                                payment-service → topic: <code>payment.created</code>
-                            </p>
-                        </div>
-                    </div>
-                    <div className="d-flex align-items-start mb-3">
-                        <div className="bg-success bg-opacity-10 rounded-circle p-2 me-3 mt-1">
-                            <span style={{ fontSize: '0.9rem' }}>🔔</span>
-                        </div>
-                        <div>
-                            <p className="fw-semibold mb-1 small">Notification Created</p>
-                            <p className="text-muted mb-0" style={{ fontSize: '0.75rem' }}>
-                                notification-service consumes and applies template
-                            </p>
-                        </div>
-                    </div>
-                    <div className="d-flex align-items-start">
-                        <div className="bg-warning bg-opacity-10 rounded-circle p-2 me-3 mt-1">
-                            <span style={{ fontSize: '0.9rem' }}>✅</span>
-                        </div>
-                        <div>
-                            <p className="fw-semibold mb-1 small">Bell Badge Updated</p>
-                            <p className="text-muted mb-0" style={{ fontSize: '0.75rem' }}>
-                                Dashboard notification bell shows new count
-                            </p>
-                        </div>
-                    </div>
+                    )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
-
-// Need Bell import since we use it in JSX above
-import { Bell } from 'lucide-react';
 
 export default PaymentScreen;

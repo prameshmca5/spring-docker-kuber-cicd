@@ -19,10 +19,10 @@ public class PaymentController {
     private static final String TOPIC = "payment.created";
 
     private final PaymentRepository repository;
-    private final KafkaTemplate<String, NotificationEvent> kafkaTemplate;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public PaymentController(PaymentRepository repository,
-            KafkaTemplate<String, NotificationEvent> kafkaTemplate) {
+            KafkaTemplate<String, Object> kafkaTemplate) {
         this.repository = repository;
         this.kafkaTemplate = kafkaTemplate;
         log.info("PaymentController initialized");
@@ -48,6 +48,14 @@ public class PaymentController {
                     log.warn("Payment not found with ID: {}", id);
                     return ResponseEntity.notFound().build();
                 });
+    }
+
+    @GetMapping("/account/{accountId}")
+    public ResponseEntity<List<Payment>> getByAccountId(@PathVariable Long accountId) {
+        log.info("GET /api/v1/payments/account/{} - Fetching payments by account ID", accountId);
+        List<Payment> payments = repository.findByAccountId(accountId);
+        log.debug("Found {} payments for account {}", payments.size(), accountId);
+        return ResponseEntity.ok(payments);
     }
 
     @PostMapping

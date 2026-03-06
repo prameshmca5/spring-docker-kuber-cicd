@@ -9,6 +9,7 @@ import Settings from './components/Settings';
 import Login from './components/Login';
 import Register from './components/Register';
 import PaymentScreen from './components/PaymentScreen';
+import KafkaSample from './components/KafkaSample';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
@@ -28,6 +29,7 @@ function App() {
               <Route path="accounts" element={<AccountsCards />} />
               <Route path="transfers" element={<Transfers />} />
               <Route path="payments" element={<PaymentScreen />} />
+              <Route path="kafka-sample" element={<KafkaSample />} />
               <Route path="settings" element={<Settings />} />
             </Route>
           </Route>

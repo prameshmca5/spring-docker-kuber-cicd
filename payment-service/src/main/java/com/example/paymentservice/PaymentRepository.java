@@ -1,3 +1,8 @@
 package com.example.paymentservice;
+
 import org.springframework.data.jpa.repository.JpaRepository;
-public interface PaymentRepository extends JpaRepository<Payment, Long> {}
+import java.util.List;
+
+public interface PaymentRepository extends JpaRepository<Payment, Long> {
+    List<Payment> findByAccountId(Long accountId);
+}
