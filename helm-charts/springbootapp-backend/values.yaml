@@ -35,10 +35,9 @@ appConfig:
 
 ingress:
   enabled: true
-  className: ""
+  className: "kong"
   annotations:
-    kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/rewrite-target: /api/$1
+    konghq.com/strip-path: "true"
   hosts:
     - host: springbootapp.local
       paths:

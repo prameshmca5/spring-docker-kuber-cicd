@@ -1,0 +1,32 @@
+# Kong Gateway configuration for local Minikube development
+deployment:
+  ingressController:
+    enabled: true
+    installCrds: true
+
+ingressController:
+  installCrds: true
+
+proxy:
+  type: NodePort
+  http:
+    nodePort: 30080
+  tls:
+    nodePort: 30443
+
+# Disable Enterprise features for local dev
+enterprise:
+  enabled: false
+  portal:
+    enabled: false
+  rbac:
+    enabled: false
+  smtp:
+    enabled: false
+
+# Enable Kong Manager (Open Source version)
+manager:
+  enabled: true
+  type: NodePort
+  http:
+    nodePort: 30002

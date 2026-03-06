@@ -8,51 +8,51 @@ spring:
         gateway:
             discovery:
                 locator:
-                    enabled: false
+                    enabled: true
                     lower-case-service-id: true
             routes:
                 - id: auth-service
-                  uri: http://auth-service.backend.svc.cluster.local:8089
+                  uri: lb://auth-service
                   predicates:
                       - Path=/api/v1/auth/**
                 - id: employee-service
-                  uri: http://employee-service:8080
+                  uri: lb://employee-service
                   predicates:
                       - Path=/api/v1/employees/**
                   filters:
                       - AuthenticationFilter
                 - id: account-service
-                  uri: http://account-service:8081
+                  uri: lb://account-service
                   predicates:
                       - Path=/api/v1/accounts/**
                   filters:
                       - AuthenticationFilter
                 - id: customer-service
-                  uri: http://customer-service:8082
+                  uri: lb://customer-service
                   predicates:
                       - Path=/api/v1/customers/**
                   filters:
                       - AuthenticationFilter
                 - id: transaction-service
-                  uri: http://transaction-service:8083
+                  uri: lb://transaction-service
                   predicates:
                       - Path=/api/v1/transactions/**
                   filters:
                       - AuthenticationFilter
                 - id: notification-service
-                  uri: http://notification-service:8084
+                  uri: lb://notification-service
                   predicates:
                       - Path=/api/v1/notifications/**
                   filters:
                       - AuthenticationFilter
                 - id: payment-service
-                  uri: http://payment-service:8085
+                  uri: lb://payment-service
                   predicates:
                       - Path=/api/v1/payments/**
                   filters:
                       - AuthenticationFilter
                 - id: common-service
-                  uri: http://common-service:8087
+                  uri: lb://common-service
                   predicates:
                       - Path=/api/common/**
                   filters:

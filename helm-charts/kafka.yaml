@@ -54,7 +54,7 @@ spec:
             - /bin/bash
             - -c
             - |
-              export CLUSTER_ID=$(/opt/kafka/bin/kafka-storage.sh random-uuid)
+              export CLUSTER_ID="4L6G9nx8S2iS8tjB6E0m0g"
               /opt/kafka/bin/kafka-storage.sh format -t $CLUSTER_ID \
                 -c /opt/kafka/config/kraft/server.properties 2>/dev/null || true
               exec /opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/kraft/server.properties \
@@ -63,7 +63,7 @@ spec:
                 --override listeners=PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093 \
                 --override advertised.listeners=PLAINTEXT://kafka.external-tools.svc.cluster.local:9092 \
                 --override listener.security.protocol.map=PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT \
-                --override controller.quorum.voters=1@localhost:9093 \
+                --override controller.quorum.voters=1@127.0.0.1:9093 \
                 --override controller.listener.names=CONTROLLER \
                 --override inter.broker.listener.name=PLAINTEXT \
                 --override auto.create.topics.enable=true \
