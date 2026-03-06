@@ -55,9 +55,8 @@ pipeline {
             steps {
                 echo '⚙️ Setting up environment...'
                 sh '''
-                    # Dynamically get minikube server address
-                    export PATH=$PATH:/usr/local/bin:/opt/homebrew/bin
-                    MINIKUBE_SERVER=$(kubectl config view -o jsonpath='{.clusters[?(@.name=="minikube")].cluster.server}')
+                    # Force retrieval from system default config to avoid stale workspace file
+                    MINIKUBE_SERVER=$(unset KUBECONFIG && kubectl config view -o jsonpath='{.clusters[?(@.name=="minikube")].cluster.server}')
                     
                     if [ -z "$MINIKUBE_SERVER" ]; then
                         echo "⚠️ Minikube server URL not found in config! Using default."
