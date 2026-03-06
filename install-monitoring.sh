@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+export PATH=$PATH:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin
 
 NAMESPACE="monitoring"
 KUBECTL=$(which kubectl || find /usr/local/bin /usr/bin /opt/homebrew/bin -name kubectl | head -n 1)

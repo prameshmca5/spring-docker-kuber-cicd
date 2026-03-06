@@ -1,9 +1,13 @@
 #!/bin/bash
 set -e
+export PATH=$PATH:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOCKER=$(which docker || echo "docker")
-MINIKUBE=$(which minikube || echo "minikube")
+DOCKER=$(which docker || find /usr/local/bin /usr/bin -name docker | head -n 1)
+if [ -z "$DOCKER" ]; then DOCKER="docker"; fi
+
+MINIKUBE=$(which minikube || find /usr/local/bin /usr/bin /opt/homebrew/bin -name minikube | head -n 1)
+if [ -z "$MINIKUBE" ]; then MINIKUBE="minikube"; fi
 
 IMAGE_TAG=${1:-"latest"}
 
@@ -40,7 +44,7 @@ for ENTRY in "${SERVICES[@]}"; do
 
   echo "   ✔ Built: $IMAGE_NAME"
 
-  if [ -x "$(command -v minikube)" ]; then
+  if [ -x "$MINIKUBE" ] || [ -x "$(command -v minikube)" ]; then
     echo "=> [2/2] Loading '$IMAGE_NAME' into Minikube..."
     $MINIKUBE image load "$IMAGE_NAME"
     echo "   ✔ Loaded: $IMAGE_NAME"
@@ -60,7 +64,7 @@ $DOCKER build \
   -t "springbootapps-react-frontend:${IMAGE_TAG}" \
   "$SCRIPT_DIR/react-frontend"
 
-if [ -x "$(command -v minikube)" ]; then
+if [ -x "$MINIKUBE" ] || [ -x "$(command -v minikube)" ]; then
   $MINIKUBE image load "springbootapps-react-frontend:${IMAGE_TAG}"
   echo "   ✔ Done: springbootapps-react-frontend:${IMAGE_TAG} (loaded into Minikube)"
 else
