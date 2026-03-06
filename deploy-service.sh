@@ -4,7 +4,8 @@ set -e
 SERVICE=$1
 NAMESPACE=${2:-"backend"}
 CHART_DIR="./helm-charts/banking-service"
-HELM=$(which helm || echo "helm")
+HELM=$(which helm || find /usr/local/bin /usr/bin /opt/homebrew/bin -name helm | head -n 1)
+if [ -z "$HELM" ]; then HELM="helm"; fi
 
 if [ -z "$SERVICE" ]; then
   echo "Usage: ./deploy-service.sh <service-name> [namespace]"

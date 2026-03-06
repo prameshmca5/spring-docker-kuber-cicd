@@ -2,7 +2,8 @@
 set -e
 
 NAMESPACE="monitoring"
-KUBECTL=$(which kubectl || echo "kubectl")
+KUBECTL=$(which kubectl || find /usr/local/bin /usr/bin /opt/homebrew/bin -name kubectl | head -n 1)
+if [ -z "$KUBECTL" ]; then KUBECTL="kubectl"; fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DASHBOARDS_DIR="$SCRIPT_DIR/helm-charts/monitoring-stack/dashboards"
 
@@ -38,6 +39,22 @@ $KUBECTL apply -f "$SCRIPT_DIR/helm-charts/monitoring-stack/promtail.yaml"
 echo ""
 echo "=> Deploying Kafka Exporter (Kafka metrics for Prometheus)..."
 $KUBECTL apply -f "$SCRIPT_DIR/helm-charts/monitoring-stack/kafka-exporter.yaml"
+
+echo ""
+echo "=> Deploying Kube State Metrics (Cluster state metrics)..."
+$KUBECTL apply -f "$SCRIPT_DIR/helm-charts/monitoring-stack/kube-state-metrics.yaml"
+
+echo ""
+echo "=> Deploying Alertmanager (alert handling)..."
+$KUBECTL apply -f "$SCRIPT_DIR/helm-charts/monitoring-stack/alertmanager.yaml"
+
+echo ""
+echo "=> Deploying Node Exporter (host metrics)..."
+$KUBECTL apply -f "$SCRIPT_DIR/helm-charts/monitoring-stack/node-exporter.yaml"
+
+echo ""
+echo "=> Deploying Pushgateway (short-lived jobs)..."
+$KUBECTL apply -f "$SCRIPT_DIR/helm-charts/monitoring-stack/pushgateway.yaml"
 
 echo ""
 echo "=> Deploying Grafana (dashboards + visualisation)..."

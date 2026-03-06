@@ -3,8 +3,10 @@ set -e
 
 NAMESPACE="backend"
 CHART_DIR="./helm-charts/banking-service"
-KUBECTL=$(which kubectl || echo "kubectl")
-HELM=$(which helm || echo "helm")
+KUBECTL=$(which kubectl || find /usr/local/bin /usr/bin /opt/homebrew/bin -name kubectl | head -n 1)
+if [ -z "$KUBECTL" ]; then KUBECTL="kubectl"; fi
+HELM=$(which helm || find /usr/local/bin /usr/bin /opt/homebrew/bin -name helm | head -n 1)
+if [ -z "$HELM" ]; then HELM="helm"; fi
 
 SERVICES=(
   "discovery-server"

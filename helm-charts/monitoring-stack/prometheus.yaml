@@ -12,6 +12,11 @@ data:
       external_labels:
         cluster: 'spring-k8s-local'
 
+    alerting:
+      alertmanagers:
+      - static_configs:
+        - targets: ['alertmanager.monitoring.svc.cluster.local:9093']
+
     scrape_configs:
 
       # ── Spring Boot Microservices (Actuator /actuator/prometheus) ──────────
@@ -95,6 +100,28 @@ data:
           - targets: ['kafka-exporter.monitoring.svc.cluster.local:9308']
             labels:
               service: 'kafka'
+
+      # ── kube-state-metrics ───────────────────────────────────────────────
+      - job_name: 'kube-state-metrics'
+        static_configs:
+          - targets: ['kube-state-metrics.monitoring.svc.cluster.local:8080']
+
+      # ── Node Exporter ─────────────────────────────────────────────────────
+      - job_name: 'node-exporter'
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names: ['monitoring']
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_name]
+            action: keep
+            regex: node-exporter
+
+      # ── Pushgateway ──────────────────────────────────────────────────────
+      - job_name: 'pushgateway'
+        honor_labels: true
+        static_configs:
+          - targets: ['pushgateway.monitoring.svc.cluster.local:9091']
 
       # ── Prometheus itself ─────────────────────────────────────────────────
       - job_name: 'prometheus'
