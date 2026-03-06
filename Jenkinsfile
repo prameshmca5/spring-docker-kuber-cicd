@@ -55,12 +55,21 @@ pipeline {
             steps {
                 echo '⚙️ Setting up environment...'
                 sh '''
-                    cat > ${KUBECONFIG} << 'KUBEEOF'
+                    # Dynamically get minikube server address
+                    export PATH=$PATH:/usr/local/bin:/opt/homebrew/bin
+                    MINIKUBE_SERVER=$(kubectl config view -o jsonpath='{.clusters[?(@.name=="minikube")].cluster.server}')
+                    
+                    if [ -z "$MINIKUBE_SERVER" ]; then
+                        echo "⚠️ Minikube server URL not found in config! Using default."
+                        MINIKUBE_SERVER="https://127.0.0.1:8443"
+                    fi
+
+                    cat > ${KUBECONFIG} << KUBEEOF
 apiVersion: v1
 clusters:
 - cluster:
     certificate-authority: /Users/rohit/.minikube/ca.crt
-    server: https://127.0.0.1:49790
+    server: ${MINIKUBE_SERVER}
   name: minikube
 contexts:
 - context:
@@ -77,7 +86,7 @@ users:
     client-certificate: /Users/rohit/.minikube/profiles/minikube/client.crt
     client-key: /Users/rohit/.minikube/profiles/minikube/client.key
 KUBEEOF
-                    echo "✅ Kubeconfig written to ${KUBECONFIG}"
+                    echo "✅ Kubeconfig written to ${KUBECONFIG} using server ${MINIKUBE_SERVER}"
                 '''
             }
         }
