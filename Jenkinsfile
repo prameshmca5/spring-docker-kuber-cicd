@@ -197,11 +197,11 @@ KUBEEOF
             }
             steps {
                 echo '🚀 Deploying to Kubernetes via Helm...'
-                sh '''
+                sh """
                     kubectl create namespace backend --dry-run=client -o yaml | kubectl apply -f -
                     chmod +x deploy-all.sh
                     ./deploy-all.sh --namespace backend --service "${params.BACKEND_SERVICE}"
-                '''
+                """
             }
         }
 
