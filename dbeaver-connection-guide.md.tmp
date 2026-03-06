@@ -1,0 +1,13 @@
+# Start Minikube & Docker
+minikube start --driver=docker
+
+# Enable the Ingress Addon
+minikube addons enable ingress
+
+# Start Minikube Tunnel (Must run in a separate terminal)
+# This allows access to LoadBalancer services like the ingress controller
+sudo minikube tunnel
+
+# (Alternative to Tunnel) Port-Forward the Ingress Controller
+# If you don't want to use sudo minikube tunnel, you can port-forward:
+kubectl port-forward --namespace=ingress-nginx service/ingress-nginx-controller 8888:80
