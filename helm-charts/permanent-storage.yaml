@@ -1,0 +1,197 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-pv-main
+spec:
+  capacity: { storage: 5Gi }
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath: { path: "/mnt/data/mysql-main" }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc
+  namespace: db
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: manual
+  resources: { requests: { storage: 5Gi } }
+---
+# MySQL Account
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-pv-account
+spec:
+  capacity: { storage: 2Gi }
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath: { path: "/mnt/data/mysql-account" }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-account-pvc
+  namespace: db
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: manual
+  resources: { requests: { storage: 2Gi } }
+---
+# MySQL Notification
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-pv-notification
+spec:
+  capacity: { storage: 2Gi }
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath: { path: "/mnt/data/mysql-notification" }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-notification-pvc
+  namespace: db
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: manual
+  resources: { requests: { storage: 2Gi } }
+---
+# MySQL Payment
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-pv-payment
+spec:
+  capacity: { storage: 2Gi }
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath: { path: "/mnt/data/mysql-payment" }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-payment-pvc
+  namespace: db
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: manual
+  resources: { requests: { storage: 2Gi } }
+---
+# MySQL Transaction
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-pv-transaction
+spec:
+  capacity: { storage: 2Gi }
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath: { path: "/mnt/data/mysql-transaction" }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-transaction-pvc
+  namespace: db
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: manual
+  resources: { requests: { storage: 2Gi } }
+---
+# MySQL Common
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-pv-common
+spec:
+  capacity: { storage: 2Gi }
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath: { path: "/mnt/data/mysql-common" }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-common-pvc
+  namespace: db
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: manual
+  resources: { requests: { storage: 2Gi } }
+---
+# MySQL Auth
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-pv-auth
+spec:
+  capacity: { storage: 2Gi }
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath: { path: "/mnt/data/mysql-auth" }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-auth-pvc
+  namespace: db
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: manual
+  resources: { requests: { storage: 2Gi } }
+---
+# Postgres Customer
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv-customer
+spec:
+  capacity: { storage: 2Gi }
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath: { path: "/mnt/data/postgres-customer" }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-customer-pvc
+  namespace: db
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: manual
+  resources: { requests: { storage: 2Gi } }
+---
+# Postgres Employee
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv-employee
+spec:
+  capacity: { storage: 2Gi }
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath: { path: "/mnt/data/postgres-employee" }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-employee-pvc
+  namespace: db
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: manual
+  resources: { requests: { storage: 2Gi } }

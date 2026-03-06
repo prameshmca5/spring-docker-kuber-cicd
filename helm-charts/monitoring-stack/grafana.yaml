@@ -34,6 +34,18 @@ data:
         access: proxy
         url: http://loki.monitoring.svc.cluster.local:3100
         isDefault: false
+        jsonData:
+          derivedFields:
+            - datasourceUid: jaeger
+              matcherRegex: '"trace":"(\w+)"'
+              name: TraceID
+              url: '${__value.raw}'
+      - name: Jaeger
+        type: jaeger
+        uid: jaeger
+        access: proxy
+        url: http://jaeger.monitoring.svc.cluster.local:16686
+        isDefault: false
 ---
 apiVersion: v1
 kind: ConfigMap

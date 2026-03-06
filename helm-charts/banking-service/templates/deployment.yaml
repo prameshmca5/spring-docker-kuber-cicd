@@ -44,6 +44,14 @@ spec:
               value: "$(OTEL_SAMPLING_PROBABILITY)"
             - name: MANAGEMENT_TRACING_PROPAGATION_TYPE
               value: "W3C"
+            - name: LOGGING_LEVEL_ROOT
+              value: "$(LOGGING_LEVEL_ROOT)"
+            - name: LOGGING_LEVEL_ORG_HIBERNATE_SQL
+              value: "$(LOGGING_LEVEL_ORG_HIBERNATE_SQL)"
+            - name: LOGGING_LEVEL_COM_EXAMPLE
+              value: "$(LOGGING_LEVEL_COM_EXAMPLE)"
+            - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+              value: "$(MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE)"
           startupProbe:
             httpGet:
               path: /actuator/health/liveness

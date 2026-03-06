@@ -14,6 +14,9 @@ $KUBECTL create namespace $NAMESPACE || true
 $KUBECTL create namespace backend || true
 $KUBECTL create namespace external-tools || true
 
+echo "=> Deploying permanent storage (Retention Policy: Retain)..."
+$KUBECTL apply -f ./helm-charts/permanent-storage.yaml
+
 echo "=> Deploying global configurations..."
 $KUBECTL apply -f ./helm-charts/global-config.yaml
 
