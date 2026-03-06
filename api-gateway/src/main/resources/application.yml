@@ -51,6 +51,12 @@ spring:
                       - Path=/api/v1/payments/**
                   filters:
                       - AuthenticationFilter
+                - id: kafka-sample
+                  uri: lb://payment-service
+                  predicates:
+                      - Path=/api/v1/kafka-sample/**
+                  filters:
+                      - AuthenticationFilter
                 - id: common-service
                   uri: lb://common-service
                   predicates:
