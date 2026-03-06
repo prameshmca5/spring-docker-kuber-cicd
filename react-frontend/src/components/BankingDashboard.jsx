@@ -61,15 +61,45 @@ const BankingDashboard = () => {
                                     <LayoutDashboard size={18} className="me-2" /> Dashboard
                                 </NavLink>
                             </li>
-                            <li className="nav-item me-3">
-                                <NavLink className={({ isActive }) => `nav-link d-flex align-items-center ${isActive ? 'active fw-bold' : 'text-white-50 hover-opacity'}`} to="/dashboard/accounts">
+                            <li className="nav-item me-3 dropdown position-relative"
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.classList.add('show');
+                                    e.currentTarget.querySelector('.dropdown-menu').classList.add('show');
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.classList.remove('show');
+                                    e.currentTarget.querySelector('.dropdown-menu').classList.remove('show');
+                                }}
+                            >
+                                <a className="nav-link dropdown-toggle d-flex align-items-center text-white-50 hover-opacity cursor-pointer" id="accountsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <CreditCard size={18} className="me-2" /> Accounts & Cards
-                                </NavLink>
+                                </a>
+                                <ul className="dropdown-menu shadow border-0 mt-0" aria-labelledby="accountsDropdown">
+                                    <li><NavLink className="dropdown-item py-2" to="/dashboard/accounts/list">View All Accounts</NavLink></li>
+                                    <li><NavLink className="dropdown-item py-2" to="/dashboard/accounts/create">Open New Account</NavLink></li>
+                                    <li><hr className="dropdown-divider" /></li>
+                                    <li><NavLink className="dropdown-item py-2 text-muted" to="/dashboard/accounts">Legacy View</NavLink></li>
+                                </ul>
                             </li>
-                            <li className="nav-item me-3">
-                                <NavLink className={({ isActive }) => `nav-link d-flex align-items-center ${isActive ? 'active fw-bold' : 'text-white-50 hover-opacity'}`} to="/dashboard/transfers">
+                            <li className="nav-item me-3 dropdown position-relative"
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.classList.add('show');
+                                    e.currentTarget.querySelector('.dropdown-menu').classList.add('show');
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.classList.remove('show');
+                                    e.currentTarget.querySelector('.dropdown-menu').classList.remove('show');
+                                }}
+                            >
+                                <a className="nav-link dropdown-toggle d-flex align-items-center text-white-50 hover-opacity cursor-pointer" id="transfersDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <ArrowRightLeft size={18} className="me-2" /> Transfers
-                                </NavLink>
+                                </a>
+                                <ul className="dropdown-menu shadow border-0 mt-0" aria-labelledby="transfersDropdown">
+                                    <li><NavLink className="dropdown-item py-2" to="/dashboard/transfers/list">Transfer History</NavLink></li>
+                                    <li><NavLink className="dropdown-item py-2" to="/dashboard/transfers/create">Make a Transfer</NavLink></li>
+                                    <li><hr className="dropdown-divider" /></li>
+                                    <li><NavLink className="dropdown-item py-2 text-muted" to="/dashboard/transfers">Legacy View</NavLink></li>
+                                </ul>
                             </li>
                             <li className="nav-item me-3">
                                 <NavLink className={({ isActive }) => `nav-link d-flex align-items-center ${isActive ? 'active fw-bold' : 'text-white-50 hover-opacity'}`} to="/dashboard/payments">

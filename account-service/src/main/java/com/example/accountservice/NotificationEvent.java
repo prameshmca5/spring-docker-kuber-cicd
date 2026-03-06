@@ -5,8 +5,8 @@ package com.example.accountservice;
  * Consumed by notification-service to generate a notification.
  */
 public record NotificationEvent(
-        Long customerId,
-        String eventType, // e.g. "ACCOUNT_CREATED"
-        String message // human-readable summary
-) {
+                Long customerId,
+                String eventType, // e.g. "ACCOUNT_CREATED"
+                String message, // human-readable summary
+                java.util.Map<String, String> metadata) {
 }

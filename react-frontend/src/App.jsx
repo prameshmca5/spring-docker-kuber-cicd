@@ -5,6 +5,10 @@ import EmployeeDashboard from './components/EmployeeDashboard';
 import LandingPage from './components/LandingPage';
 import AccountsCards from './components/AccountsCards';
 import Transfers from './components/Transfers';
+import AccountCreate from './components/AccountCreate';
+import AccountsList from './components/AccountsList';
+import TransferCreate from './components/TransferCreate';
+import TransfersList from './components/TransfersList';
 import Settings from './components/Settings';
 import Login from './components/Login';
 import Register from './components/Register';
@@ -26,8 +30,16 @@ function App() {
           <Route path="/dashboard" element={<ProtectedRoute />}>
             <Route element={<BankingDashboard />}>
               <Route index element={<EmployeeDashboard />} />
-              <Route path="accounts" element={<AccountsCards />} />
-              <Route path="transfers" element={<Transfers />} />
+              <Route path="accounts">
+                <Route index element={<AccountsCards />} />
+                <Route path="list" element={<AccountsList />} />
+                <Route path="create" element={<AccountCreate />} />
+              </Route>
+              <Route path="transfers">
+                <Route index element={<Transfers />} />
+                <Route path="list" element={<TransfersList />} />
+                <Route path="create" element={<TransferCreate />} />
+              </Route>
               <Route path="payments" element={<PaymentScreen />} />
               <Route path="kafka-sample" element={<KafkaSample />} />
               <Route path="settings" element={<Settings />} />

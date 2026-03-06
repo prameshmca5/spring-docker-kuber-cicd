@@ -20,11 +20,14 @@ public class PaymentController {
 
     private final PaymentRepository repository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final AccountClient accountClient;
 
     public PaymentController(PaymentRepository repository,
-            KafkaTemplate<String, Object> kafkaTemplate) {
+            KafkaTemplate<String, Object> kafkaTemplate,
+            AccountClient accountClient) {
         this.repository = repository;
         this.kafkaTemplate = kafkaTemplate;
+        this.accountClient = accountClient;
         log.info("PaymentController initialized");
     }
 
@@ -64,6 +67,17 @@ public class PaymentController {
         Payment saved = repository.save(p);
         log.info("Payment created with ID: {}", saved.getId());
 
+        Long customerId = saved.getAccountId();
+        try {
+            AccountDto account = accountClient.getAccountById(saved.getAccountId());
+            if (account != null && account.customerId() != null) {
+                customerId = account.customerId();
+            }
+        } catch (Exception e) {
+            log.error("Failed to fetch account details for accountId: {}. Using accountId as fallback.",
+                    saved.getAccountId(), e);
+        }
+
         // Build metadata for the notification template
         Map<String, String> metadata = new java.util.HashMap<>();
         metadata.put("amount", String.format("%.2f", saved.getAmount()));
@@ -71,12 +85,12 @@ public class PaymentController {
 
         // Publish async notification event with template metadata
         NotificationEvent event = new NotificationEvent(
-                saved.getAccountId(),
+                customerId,
                 "PAYMENT_CREATED",
                 null,
                 metadata);
         kafkaTemplate.send(TOPIC, String.valueOf(saved.getId()), event);
-        log.info("Published PAYMENT_CREATED event to topic '{}' for accountId={}", TOPIC, saved.getAccountId());
+        log.info("Published PAYMENT_CREATED event to topic '{}' for customerId={}", TOPIC, customerId);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
