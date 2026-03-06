@@ -19,11 +19,26 @@ SERVICES=(
   "auth-service"
 )
 
+# Parse arguments
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --namespace) NAMESPACE="$2"; shift ;;
+        --service) SELECT_SERVICE="$2"; shift ;;
+    esac
+    shift
+done
+
 echo "Deploying Banking Ecosystem to namespace: $NAMESPACE"
 
-for SERVICE in "${SERVICES[@]}"; do
-  ./deploy-service.sh "$SERVICE" "$NAMESPACE"
-done
+if [ -n "$SELECT_SERVICE" ] && [ "$SELECT_SERVICE" != "ALL" ]; then
+    echo "=> Selective deployment: $SELECT_SERVICE"
+    ./deploy-service.sh "$SELECT_SERVICE" "$NAMESPACE"
+else
+    echo "=> Deploying all services..."
+    for SERVICE in "${SERVICES[@]}"; do
+      ./deploy-service.sh "$SERVICE" "$NAMESPACE"
+    done
+fi
 
 echo "All microservices deployed successfully!"
 

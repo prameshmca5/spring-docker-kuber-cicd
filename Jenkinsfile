@@ -29,6 +29,7 @@ pipeline {
         booleanParam(name: 'DEPLOY_DATABASE', defaultValue: false, description: 'Deploy Database Infrastructure')
         booleanParam(name: 'DEPLOY_MONITORING', defaultValue: false, description: 'Deploy Monitoring Stack (Loki + Promtail + Grafana)')
         choice(name: 'DEPLOY_ENVIRONMENT', choices: ['dev', 'staging', 'prod'], description: 'Deployment environment')
+        choice(name: 'BACKEND_SERVICE', choices: ['ALL', 'discovery-server', 'api-gateway', 'account-service', 'customer-service', 'transaction-service', 'notification-service', 'payment-service', 'employee-service', 'common-service', 'auth-service'], description: 'Select a specific backend service to deploy, or ALL for everything')
     }
 
     stages {
@@ -199,7 +200,7 @@ KUBEEOF
                 sh '''
                     kubectl create namespace backend --dry-run=client -o yaml | kubectl apply -f -
                     chmod +x deploy-all.sh
-                    ./deploy-all.sh --namespace backend
+                    ./deploy-all.sh --namespace backend --service "${params.BACKEND_SERVICE}"
                 '''
             }
         }
