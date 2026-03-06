@@ -12,6 +12,10 @@ data:
       external_labels:
         cluster: 'spring-k8s-local'
 
+    rule_files:
+      - "/etc/prometheus/alert_rules.yml"
+      - "/etc/prometheus/recording_rules.yml"
+
     alerting:
       alertmanagers:
       - static_configs:
@@ -127,6 +131,60 @@ data:
       - job_name: 'prometheus'
         static_configs:
           - targets: ['localhost:9090']
+
+      - job_name: 'grafana'
+        static_configs:
+          - targets: ['grafana.monitoring.svc.cluster.local:3000']
+
+      - job_name: 'loki'
+        static_configs:
+          - targets: ['loki.monitoring.svc.cluster.local:3100']
+
+      - job_name: 'alertmanager'
+        static_configs:
+          - targets: ['alertmanager.monitoring.svc.cluster.local:9093']
+
+  recording_rules.yml: |
+    groups:
+    - name: spring_boot_performance
+      rules:
+      - record: job:http_server_requests_seconds_count:rate5m
+        expr: sum by (service, method) (rate(http_server_requests_seconds_count[5m]))
+      - record: job:http_server_requests_seconds_sum:rate5m
+        expr: sum by (service, method) (rate(http_server_requests_seconds_sum[5m]))
+
+  alert_rules.yml: |
+    groups:
+    - name: system_health
+      rules:
+      - alert: Watchdog
+        expr: vector(1)
+        for: 1m
+        labels:
+          severity: none
+        annotations:
+          summary: "Watchdog Alert"
+          description: "This alert is always firing to ensure the alerting pipeline is operational."
+
+    - name: microservices
+      rules:
+      - alert: ServiceDown
+        expr: up{namespace="backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Microservice Down: {{ $labels.service }}"
+          description: "Service {{ $labels.service }} has been down for more than 1 minute in namespace {{ $labels.namespace }}."
+
+      - alert: HighErrorRate
+        expr: rate(http_server_requests_seconds_count{status=~"5.."}[5m]) > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Error Rate on {{ $labels.service }}"
+          description: "Service {{ $labels.service }} is returning 5xx errors ({{ $value }} req/s)."
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -199,6 +257,8 @@ spec:
             - --storage.tsdb.path=/prometheus
             - --storage.tsdb.retention.time=15d
             - --web.enable-lifecycle
+            - --web.external-url=http://prometheus.local/
+            - --web.route-prefix=/
           ports:
             - containerPort: 9090
               name: http

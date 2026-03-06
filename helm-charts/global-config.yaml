@@ -10,3 +10,5 @@ data:
   POSTGRES_HOST: "springbootapp-db-postgres.db.svc.cluster.local"
   DB2_HOST: "db2.db.svc.cluster.local"
   DB2_PORT: "50000"
+  JAEGER_OTLP_ENDPOINT: "http://jaeger.monitoring.svc.cluster.local:4317"
+  OTEL_SAMPLING_PROBABILITY: "1.0"

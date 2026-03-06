@@ -38,6 +38,12 @@ spec:
             - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
               value: "$(EUREKA_SERVER_URL)"
 {{- end }}
+            - name: MANAGEMENT_OTLP_TRACING_ENDPOINT
+              value: "$(JAEGER_OTLP_ENDPOINT)"
+            - name: MANAGEMENT_TRACING_SAMPLING_PROBABILITY
+              value: "$(OTEL_SAMPLING_PROBABILITY)"
+            - name: MANAGEMENT_TRACING_PROPAGATION_TYPE
+              value: "W3C"
           startupProbe:
             httpGet:
               path: /actuator/health/liveness
