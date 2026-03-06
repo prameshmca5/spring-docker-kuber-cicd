@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Ensure this points to the external address if testing via Minikube outside the cluster
 // For local port forwarding via Minikube/Kubectl, using localhost mapping:
-const API_URL = 'http://localhost/api/v1/accounts';
+const API_URL = '/api/v1/accounts';
 
 class AccountService {
 

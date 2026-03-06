@@ -8,18 +8,21 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: springbootapp.local
+    - host: prometheus.local
       http:
         paths:
-          - path: /prometheus(/|$)(.*)
-            pathType: ImplementationSpecific
+          - path: /
+            pathType: Prefix
             backend:
               service:
                 name: prometheus
                 port:
                   number: 9090
-          - path: /grafana(/|$)(.*)
-            pathType: ImplementationSpecific
+    - host: grafana.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
             backend:
               service:
                 name: grafana
