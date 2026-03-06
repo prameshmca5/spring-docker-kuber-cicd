@@ -195,3 +195,4 @@ spec:
   accessModes: ["ReadWriteOnce"]
   storageClassName: manual
   resources: { requests: { storage: 2Gi } }
+---

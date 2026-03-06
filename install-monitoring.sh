@@ -20,8 +20,7 @@ $KUBECTL create namespace $NAMESPACE --dry-run=client -o yaml | $KUBECTL apply -
 echo ""
 echo "=> Creating Grafana dashboard ConfigMap from JSON files..."
 $KUBECTL create configmap grafana-dashboards-files \
-    --from-file="$DASHBOARDS_DIR/microservices-overview.json" \
-    --from-file="$DASHBOARDS_DIR/kafka-pipeline.json" \
+    --from-file="$DASHBOARDS_DIR/" \
     -n $NAMESPACE \
     --dry-run=client -o yaml | $KUBECTL apply -f -
 
