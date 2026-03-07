@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 
@@ -15,8 +16,7 @@ import java.util.Date;
 public class JwtUtils {
     private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
 
-    @Value("${jwt.secret}")
-    private String jwtSecret;
+    private static final String jwtSecret = "C9XSpVNTfdsK3ZOZieL8SSVRslmmxFyxVpO1maa0Vo8=";
 
     @Value("${jwt.expiration}")
     private int jwtExpirationMs;

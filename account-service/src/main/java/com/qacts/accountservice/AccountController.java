@@ -21,19 +21,42 @@ public class AccountController {
     }
 
     @GetMapping
-    public List<Account> getAll() {
-        return repository.findAll();
+    public List<Account> getAll(
+            @RequestHeader(value = "X-User-Id", required = false) Long userId,
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+        if ("ROLE_ADMIN".equals(role)) {
+            return repository.findAll();
+        }
+        if (userId != null) {
+            return repository.findByCustomerId(userId);
+        }
+        return List.of();
     }
 
     @GetMapping("/customer/{customerId}")
-    public List<Account> getByCustomerId(@PathVariable Long customerId) {
-        return repository.findByCustomerId(customerId);
+    public List<Account> getByCustomerId(
+            @PathVariable Long customerId,
+            @RequestHeader(value = "X-User-Id", required = false) Long userId,
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+        if ("ROLE_ADMIN".equals(role) || (userId != null && userId.equals(customerId))) {
+            return repository.findByCustomerId(customerId);
+        }
+        return List.of();
     }
 
     @GetMapping("/{id}")
-    public org.springframework.http.ResponseEntity<Account> getById(@PathVariable Long id) {
+    public org.springframework.http.ResponseEntity<Account> getById(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-User-Id", required = false) Long userId,
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
         return repository.findById(id)
-                .map(org.springframework.http.ResponseEntity::ok)
+                .map(acc -> {
+                    if ("ROLE_ADMIN".equals(role) || (userId != null && userId.equals(acc.getCustomerId()))) {
+                        return org.springframework.http.ResponseEntity.ok(acc);
+                    }
+                    return org.springframework.http.ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
+                            .<Account>build();
+                })
                 .orElse(org.springframework.http.ResponseEntity.notFound().build());
     }
 

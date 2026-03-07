@@ -64,10 +64,14 @@ public class AuthController {
         }
 
         // Create new user's account
+        String role = (signUpRequest.role() != null && !signUpRequest.role().isEmpty())
+                ? signUpRequest.role()
+                : "ROLE_USER";
+
         User user = new User(signUpRequest.username(),
                 signUpRequest.email(),
                 encoder.encode(signUpRequest.password()),
-                "ROLE_USER");
+                role);
 
         userRepository.save(user);
 

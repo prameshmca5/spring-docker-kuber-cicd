@@ -43,6 +43,18 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                 }
                 try {
                     jwtUtil.validateToken(authHeader);
+
+                    // Extract claims and inject into headers
+                    Long userId = jwtUtil.getUserId(authHeader);
+                    String role = jwtUtil.getRole(authHeader);
+
+                    exchange = exchange.mutate()
+                            .request(exchange.getRequest().mutate()
+                                    .header("X-User-Id", String.valueOf(userId))
+                                    .header("X-User-Role", role)
+                                    .build())
+                            .build();
+
                 } catch (Exception e) {
                     log.error("Token validation failed for request: {}. Error: {}", exchange.getRequest().getURI(),
                             e.getMessage());
