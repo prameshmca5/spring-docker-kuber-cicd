@@ -53,6 +53,12 @@ chmod +x ./deploy-db.sh
 ./deploy-db.sh
 
 echo "=> Deploying DB Umbrella Chart..."
+# Uninstall if in a failed/pending state before reinstalling to avoid 'release: already exists' error
+RELEASE_STATUS=$($HELM status springbootapp-db --namespace $NAMESPACE -o json 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin)['info']['status'])" 2>/dev/null || echo "not-found")
+if [ "$RELEASE_STATUS" = "failed" ] || [ "$RELEASE_STATUS" = "pending-install" ] || [ "$RELEASE_STATUS" = "pending-upgrade" ]; then
+  echo "Release springbootapp-db is in '$RELEASE_STATUS' state. Uninstalling before reinstall..."
+  $HELM uninstall springbootapp-db --namespace $NAMESPACE || true
+fi
 $HELM upgrade --install springbootapp-db ./helm-charts/springbootapp-db --namespace $NAMESPACE
 
 echo "Database layer installation completed successfully!"
