@@ -198,7 +198,7 @@
   "variable": [
     {
       "key": "base_url",
-      "value": "http://springbootapp.local",
+      "value": "http://qactsai.local",
       "type": "string"
     }
   ]

@@ -15,7 +15,7 @@ kubectl get pods -A
 ```
 
 ## 3. Expose the Ingress Controller (Frontend Access)
-To access your frontend via `http://springbootapp.local`, you need to expose the NGINX Ingress controller. 
+To access your frontend via `http://qactsai.local`, you need to expose the NGINX Ingress controller. 
 
 Since port `80` requires `sudo` (Administrator) and port `8080` is used by Jenkins, we will port-forward to `8888`.
 
@@ -27,7 +27,7 @@ kubectl port-forward --namespace=ingress-nginx service/ingress-nginx-controller 
 
 ## 4. Access the Application
 You can now access your application in your browser:
-* **Frontend / Login:** http://springbootapp.local:8888/login
+* **Frontend / Login:** http://qactsai.local:8888/login
 
 ## 5. (Optional) Run Jenkins
 If you need your local Jenkins CI/CD pipeline, start its Docker Compose stack if it hasn't started automatically:

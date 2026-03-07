@@ -4,11 +4,7 @@ set -e # Exit immediately if a command exits with a non-zero status
 # Export necessary PATHs for Homebrew installations
 export PATH=$PATH:/usr/local/bin:/opt/homebrew/bin
 
-# Color codes
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
+source "$(dirname "$0")/colors.sh"
 
 echo -e "${BLUE}======================================================${NC}"
 echo -e "${GREEN}  🚀 Starting Full Local CI/CD Pipeline Deployment  ${NC}"
@@ -91,5 +87,5 @@ echo -e "\n${BLUE}======================================================${NC}"
 echo -e "${GREEN}   ✅ PIPELINE EXECUTION SUCCESSFUL!   ${NC}"
 echo -e "${BLUE}======================================================${NC}"
 echo -e "\nYou can now access your application at:"
-echo -e "👉 ${GREEN}http://springbootapp.local:8888/login${NC}"
+echo -e "👉 ${GREEN}http://qactsai.local:8888/login${NC}"
 echo ""

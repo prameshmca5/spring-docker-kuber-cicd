@@ -39,7 +39,7 @@ ingress:
   annotations:
     konghq.com/strip-path: "true"
   hosts:
-    - host: springbootapp.local
+    - host: qactsai.local
       paths:
         - path: /api/?(.*)
           pathType: ImplementationSpecific

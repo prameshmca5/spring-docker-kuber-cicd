@@ -1,15 +1,11 @@
 #!/bin/bash
 
 export PATH=$PATH:/usr/local/bin:/opt/homebrew/bin
-# Define ANSI escape codes for colors
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
+source "$(dirname "$0")/colors.sh"
 
-echo -e "${BLUE}==========================================${NC}"
-echo -e "${GREEN}Starting Spring Boot Kubernetes System${NC}"
-echo -e "${BLUE}==========================================${NC}"
+echo -e "${HEADER}==========================================${NC}"
+echo -e "${SUCCESS}Starting Spring Boot Kubernetes System${NC}"
+echo -e "${HEADER}==========================================${NC}"
 
 # 1. Start Minikube
 echo -e "${BLUE}Step 1: Starting Minikube...${NC}"
@@ -64,7 +60,7 @@ echo -e "${BLUE}==========================================${NC}"
 echo -e "${GREEN}SYSTEM IS READY!${NC}"
 echo -e "${BLUE}==========================================${NC}"
 echo -e "You can now access your application at:"
-echo -e "👉 ${GREEN}http://springbootapp.local:8888/login${NC}"
+echo -e "👉 ${GREEN}http://qactsai.local:8888/login${NC}"
 echo ""
 echo -e "To stop the port-forward later, run: ${RED}pkill -f 'kubectl port-forward'${NC}"
 echo -e "To view cluster status, run: ${BLUE}kubectl get pods -A${NC}"

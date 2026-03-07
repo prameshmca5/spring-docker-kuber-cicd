@@ -23,9 +23,8 @@ WATCH_INTERVAL="${WATCH_INTERVAL:-60}"
 FAILED_PODS=()
 ERROR_LOGS=()
 
-# ─── Colors ──────────────────────────────────────────────────────────────────
-RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
-BLUE='\033[0;34m'; CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
+source "$(dirname "$0")/colors.sh"
+BOLD='\033[1m'
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 log()      { echo "$(date '+%Y-%m-%d %H:%M:%S') $*" | tee -a "$LOG_FILE"; }

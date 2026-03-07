@@ -31,7 +31,7 @@ ingress:
   annotations:
     kubernetes.io/ingress.class: nginx
   hosts:
-    - host: springbootapp.local
+    - host: qactsai.local
       paths:
         - path: /
           pathType: Prefix

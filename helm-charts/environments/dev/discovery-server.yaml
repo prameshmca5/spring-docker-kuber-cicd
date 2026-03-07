@@ -3,4 +3,4 @@ service:
   port: 8761
 ingress:
   enabled: true
-  host: "springbootapp.local"
+  host: "qactsai.local"

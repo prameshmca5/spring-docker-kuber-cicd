@@ -22,7 +22,7 @@ spring:
       properties:
         spring.json.trusted.packages: "*"
         spring.json.use.type.headers: false
-        spring.json.value.default.type: com.example.paymentservice.KafkaSampleMessage
+        spring.json.value.default.type: com.qacts.paymentservice.KafkaSampleMessage
   jpa:
     hibernate:
       ddl-auto: update

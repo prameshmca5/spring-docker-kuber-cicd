@@ -7,8 +7,8 @@ cd $PARENT_DIR
 # ---------------------------------------------------------
 # account-service
 # ---------------------------------------------------------
-PKG="com.example.accountservice"
-DIR="account-service/src/main/java/com/example/accountservice"
+PKG="com.qacts.accountservice"
+DIR="account-service/src/main/java/com/qacts/accountservice"
 
 cat <<EOF > $DIR/Account.java
 package $PKG;
@@ -66,8 +66,8 @@ EOF
 # ---------------------------------------------------------
 # customer-service
 # ---------------------------------------------------------
-PKG="com.example.customerservice"
-DIR="customer-service/src/main/java/com/example/customerservice"
+PKG="com.qacts.customerservice"
+DIR="customer-service/src/main/java/com/qacts/customerservice"
 
 cat <<EOF > $DIR/Customer.java
 package $PKG;
@@ -122,8 +122,8 @@ EOF
 # ---------------------------------------------------------
 # transaction-service
 # ---------------------------------------------------------
-PKG="com.example.transactionservice"
-DIR="transaction-service/src/main/java/com/example/transactionservice"
+PKG="com.qacts.transactionservice"
+DIR="transaction-service/src/main/java/com/qacts/transactionservice"
 
 cat <<EOF > $DIR/BankTransaction.java
 package $PKG;
@@ -185,8 +185,8 @@ EOF
 # ---------------------------------------------------------
 # notification-service
 # ---------------------------------------------------------
-PKG="com.example.notificationservice"
-DIR="notification-service/src/main/java/com/example/notificationservice"
+PKG="com.qacts.notificationservice"
+DIR="notification-service/src/main/java/com/qacts/notificationservice"
 
 cat <<EOF > $DIR/Notification.java
 package $PKG;
@@ -242,8 +242,8 @@ EOF
 # ---------------------------------------------------------
 # payment-service
 # ---------------------------------------------------------
-PKG="com.example.paymentservice"
-DIR="payment-service/src/main/java/com/example/paymentservice"
+PKG="com.qacts.paymentservice"
+DIR="payment-service/src/main/java/com/qacts/paymentservice"
 
 cat <<EOF > $DIR/Payment.java
 package $PKG;

@@ -7,4 +7,4 @@ service:
   port: 8087
 ingress:
   enabled: true
-  host: "springbootapp.local"
+  host: "qactsai.local"

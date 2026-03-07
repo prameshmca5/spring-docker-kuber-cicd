@@ -1,14 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: "{{ .Values.serviceName }}-deployment"
+  name: "{{ .Values.serviceName }}-{{ .Values.color | default "blue" }}-deployment"
   labels:
     app: "{{ .Values.serviceName }}"
+    color: "{{ .Values.color | default "blue" }}"
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: "{{ .Values.serviceName }}"
+      color: "{{ .Values.color | default "blue" }}"
   template:
     metadata:
       annotations:
@@ -17,6 +19,7 @@ spec:
         prometheus.io/port: "{{ .Values.service.port }}"
       labels:
         app: "{{ .Values.serviceName }}"
+        color: "{{ .Values.color | default "blue" }}"
     spec:
       containers:
         - name: "{{ .Values.serviceName }}"

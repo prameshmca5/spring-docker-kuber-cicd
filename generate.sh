@@ -20,7 +20,7 @@ for item in "${SERVICES[@]}"; do
   echo "Creating $SERVICE_NAME..."
   
   # 1. Create Directories
-  mkdir -p $SERVICE_NAME/src/main/java/com/example/$PACKAGE_NAME
+  mkdir -p $SERVICE_NAME/src/main/java/com/qacts/$PACKAGE_NAME
   mkdir -p $SERVICE_NAME/src/main/resources
 
   # 2. Add Module to Parent POM
@@ -39,7 +39,7 @@ for item in "${SERVICES[@]}"; do
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.example</groupId>
+        <groupId>com.qacts</groupId>
         <artifactId>banking-microservices</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
@@ -96,8 +96,8 @@ EOF
 EOF
 
   # 4. Create Main App Class
-  cat <<EOF > $SERVICE_NAME/src/main/java/com/example/$PACKAGE_NAME/$CLASS_NAME.java
-package com.example.$PACKAGE_NAME;
+  cat <<EOF > $SERVICE_NAME/src/main/java/com/qacts/$PACKAGE_NAME/$CLASS_NAME.java
+package com.qacts.$PACKAGE_NAME;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

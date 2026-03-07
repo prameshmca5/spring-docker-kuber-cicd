@@ -16,7 +16,7 @@ appConfig: {}
 
 ingress:
   enabled: false
-  host: "springbootapp.local"
+  host: "qactsai.local"
   annotations: {}
 
 resources:
