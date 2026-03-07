@@ -11,8 +11,17 @@ echo -e "${GREEN}  🚀 Starting Full Local CI/CD Pipeline Deployment  ${NC}"
 echo -e "${BLUE}======================================================${NC}"
 
 # Variables
-IMAGE_VERSION=$(date +%Y%m%d%H%M%S)
+IMAGE_VERSION="latest"
 NAMESPACE="backend"
+SKIP_BUILD=false
+
+# Parse arguments
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --skip-build) SKIP_BUILD=true ;;
+    esac
+    shift
+done
 
 # 1. Initialize Minikube
 echo -e "\n${BLUE}▶ Stage 1/9: Initializing Environment...${NC}"
@@ -24,20 +33,24 @@ else
 fi
 minikube addons enable ingress
 
-# 2. Build Backend Java Apps
-echo -e "\n${BLUE}▶ Stage 2/9: Building Backend Microservices (Maven)...${NC}"
-chmod +x mvnw
-./mvnw clean package -DskipTests --batch-mode
+if [ "$SKIP_BUILD" = false ]; then
+  # 2. Build Backend Java Apps
+  echo -e "\n${BLUE}▶ Stage 2/9: Building Backend Microservices (Maven)...${NC}"
+  chmod +x mvnw
+  ./mvnw clean package -DskipTests --batch-mode
 
-# 3. Build Docker Images
-echo -e "\n${BLUE}▶ Stage 3/9: Building Docker Images...${NC}"
-chmod +x build-images.sh
-./build-images.sh "$IMAGE_VERSION"
+  # 3. Build Docker Images
+  echo -e "\n${BLUE}▶ Stage 3/9: Building Docker Images...${NC}"
+  chmod +x build-images.sh
+  ./build-images.sh "$IMAGE_VERSION"
 
-# 4. Load Images into Minikube
-echo -e "\n${BLUE}▶ Stage 4/9: Loading Images into Minikube...${NC}"
-chmod +x load-images.sh
-./load-images.sh "$IMAGE_VERSION"
+  # 4. Load Images into Minikube
+  echo -e "\n${BLUE}▶ Stage 4/9: Loading Images into Minikube...${NC}"
+  chmod +x load-images.sh
+  ./load-images.sh "$IMAGE_VERSION"
+else
+  echo -e "\n${BLUE}▶ Skipping Stages 2-4: Using existing Docker images...${NC}"
+fi
 
 # 5. Deploy Database Infrastructure
 echo -e "\n${BLUE}▶ Stage 5/9: Deploying Databases...${NC}"

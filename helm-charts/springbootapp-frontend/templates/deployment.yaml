@@ -11,6 +11,8 @@ spec:
       {{- include "springbootapp-chart.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+      annotations:
+        rollout/run: {{ randAlphaNum 5 | quote }}
       labels:
         {{- include "springbootapp-chart.selectorLabels" . | nindent 8 }}
     spec:

@@ -11,7 +11,7 @@ pipeline {
         GIT_COMMIT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
         GIT_BRANCH = sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
         POM_VERSION = sh(script: 'chmod +x mvnw && ./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout || echo ""', returnStdout: true).trim()
-        IMAGE_VERSION = "${POM_VERSION == '' || POM_VERSION.contains('\$') || POM_VERSION.contains('SNAPSHOT') ? BUILD_TIMESTAMP + '-' + GIT_COMMIT : POM_VERSION}"
+        IMAGE_VERSION = "latest"
     }
 
     options {
@@ -24,6 +24,7 @@ pipeline {
     parameters {
         booleanParam(name: 'SKIP_TESTS', defaultValue: true, description: 'Skip running tests')
         booleanParam(name: 'CLEAN_BUILD', defaultValue: true, description: 'Perform clean build')
+        booleanParam(name: 'BUILD_IMAGES', defaultValue: false, description: 'Build and load new Docker Images')
         booleanParam(name: 'DEPLOY_BACKEND', defaultValue: true, description: 'Deploy Backend via Helm')
         booleanParam(name: 'DEPLOY_FRONTEND', defaultValue: true, description: 'Deploy Frontend via Helm')
         booleanParam(name: 'DEPLOY_DATABASE', defaultValue: false, description: 'Deploy Database Infrastructure')
@@ -106,7 +107,7 @@ KUBEEOF
 
         stage('Dependency Check') {
             when {
-                expression { params.CLEAN_BUILD }
+                expression { params.CLEAN_BUILD && params.BUILD_IMAGES }
             }
             steps {
                 echo '📦 Cleaning and downloading dependencies...'
@@ -123,6 +124,9 @@ KUBEEOF
         }
 
         stage('Build & Test') {
+            when {
+                expression { params.BUILD_IMAGES }
+            }
             steps {
                 echo '🔨 Building and testing...'
                 sh '''
@@ -144,6 +148,9 @@ KUBEEOF
         }
 
         stage('Build Docker Images') {
+            when {
+                expression { params.BUILD_IMAGES }
+            }
             steps {
                 echo '🐳 Building Docker images...'
                 script {
@@ -163,6 +170,9 @@ KUBEEOF
         }
 
         stage('Load Images to Minikube') {
+            when {
+                expression { params.BUILD_IMAGES }
+            }
             steps {
                 echo '📦 Loading Docker images into Minikube...'
                 sh '''
