@@ -188,6 +188,15 @@ KUBEEOF
                 sh '''
                     kubectl cluster-info
                     kubectl get nodes
+
+                    echo "=== Checking ingress-nginx webhook ==="
+                    if ! kubectl get svc ingress-nginx-controller-admission -n ingress-nginx > /dev/null 2>&1; then
+                        echo "❌ ingress-nginx admission webhook service not found!"
+                        echo "   Run: minikube addons enable ingress"
+                        echo "   And delete stale webhook: kubectl delete validatingwebhookconfiguration ingress-nginx-admission"
+                        exit 1
+                    fi
+                    echo "✅ ingress-nginx admission webhook is healthy."
                 '''
             }
         }
