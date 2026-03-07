@@ -112,7 +112,9 @@ KUBEEOF
                 echo '📦 Cleaning and downloading dependencies...'
                 sh '''
                     chmod +x mvnw
+                    # Use parallel threads (-T 1C) to speed up dependency resolution across modules
                     ./mvnw clean dependency:resolve \
+                        -T 1C \
                         -DskipTests=${SKIP_TESTS} \
                         --batch-mode \
                         --no-transfer-progress
@@ -125,7 +127,9 @@ KUBEEOF
                 echo '🔨 Building and testing...'
                 sh '''
                     chmod +x mvnw
+                    # Use parallel threads to speed up the compilation of multiple modules
                     ./mvnw package \
+                        -T 1C \
                         -DskipTests=${SKIP_TESTS} \
                         --batch-mode \
                         --no-transfer-progress
