@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-
+export PATH=$PATH:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin
 NAMESPACE="db"
 HELM=$(which helm || echo "helm")
 KUBECTL=$(which kubectl || echo "kubectl")
@@ -27,8 +27,14 @@ echo "=> Deploying shared Kafka..."
 $KUBECTL apply -f ./helm-charts/kafka.yaml
 
 echo "=> Cleaning up existing PVCs to allow Helm to manage them..."
-$KUBECTL delete pvc --all -n $NAMESPACE --wait=false || true
+chmod +x ./force-delete-pvc.sh
+./force-delete-pvc.sh || true
 $SCRIPT_DIR/reset-pvs.sh || true
+# Wait for PVCs to be truly gone
+while $KUBECTL get pvc -n $NAMESPACE 2>/dev/null | grep -q .; do
+  echo "Still waiting for PVCs in $NAMESPACE to be deleted..."
+  sleep 2
+done
 
 echo "=> Deploying dedicated databases..."
 chmod +x ./deploy-db.sh
