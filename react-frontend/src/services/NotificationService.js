@@ -7,7 +7,7 @@ const NotificationService = {
     getNotifications: (customerId) => {
         // We'll get the token from localStorage just like other services
         const token = localStorage.getItem('token');
-        return axios.get(`${API_URL}/${customerId}`, {
+        return axios.get(`${API_URL}/customer/${customerId}`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }

@@ -2,5 +2,8 @@ appConfig: {}
 service:
   port: 8081
 ingress:
-  enabled: false
+  enabled: true
   host: "qactsai.local"
+  path: "/api(/|$)(.*)"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /api/$2
