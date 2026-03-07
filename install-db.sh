@@ -26,6 +26,10 @@ $KUBECTL apply -f ./helm-charts/mysql-db.yaml
 echo "=> Deploying shared Kafka..."
 $KUBECTL apply -f ./helm-charts/kafka.yaml
 
+echo "=> Cleaning up existing pods in $NAMESPACE to unblock PVCs..."
+chmod +x ./force-delete-pods.sh
+./force-delete-pods.sh || true
+
 echo "=> Cleaning up existing PVCs to allow Helm to manage them..."
 chmod +x ./force-delete-pvc.sh
 ./force-delete-pvc.sh || true
