@@ -35,10 +35,17 @@ chmod +x ./force-delete-pvc.sh
 ./force-delete-pvc.sh || true
 chmod +x ./reset-pvs.sh
 ./reset-pvs.sh || true
-# Wait for PVCs to be truly gone
-while $KUBECTL get pvc -n $NAMESPACE 2>/dev/null | grep -q .; do
+# Wait for PVCs to be truly gone (with timeout)
+TIMEOUT=30
+ELAPSED=0
+while $KUBECTL get pvc -n $NAMESPACE 2>/dev/null | grep -v 'No resources found' | grep -v '^NAME' | grep -q .; do
+  if [ $ELAPSED -ge $TIMEOUT ]; then
+    echo "Timeout reached. Automatically skipping wait for PVC deletion..."
+    break
+  fi
   echo "Still waiting for PVCs in $NAMESPACE to be deleted..."
   sleep 2
+  ELAPSED=$((ELAPSED+2))
 done
 
 echo "=> Deploying dedicated databases..."
