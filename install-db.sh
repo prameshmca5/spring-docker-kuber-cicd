@@ -26,7 +26,12 @@ $KUBECTL apply -f ./helm-charts/mysql-db.yaml
 echo "=> Deploying shared Kafka..."
 $KUBECTL apply -f ./helm-charts/kafka.yaml
 
+echo "=> Cleaning up existing PVCs to allow Helm to manage them..."
+$KUBECTL delete pvc --all -n $NAMESPACE --wait=false || true
+$SCRIPT_DIR/reset-pvs.sh || true
+
 echo "=> Deploying dedicated databases..."
+chmod +x ./deploy-db.sh
 ./deploy-db.sh
 
 echo "=> Deploying DB Umbrella Chart..."

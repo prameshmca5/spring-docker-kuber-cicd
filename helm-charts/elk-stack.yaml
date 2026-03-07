@@ -23,14 +23,14 @@ spec:
             - name: discovery.type
               value: single-node
             - name: ES_JAVA_OPTS
-              value: "-Xms512m -Xmx512m"
+              value: "-Xms1g -Xmx1g"
           resources:
             limits:
+              cpu: "2"
+              memory: "2Gi"
+            requests:
               cpu: "1"
               memory: "1Gi"
-            requests:
-              cpu: "500m"
-              memory: "512Mi"
 ---
 apiVersion: v1
 kind: Service
