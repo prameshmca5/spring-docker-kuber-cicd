@@ -12,7 +12,7 @@
                     <pattern>
                         {
                         "severity": "%level",
-                        "service": "${spring.application.name:-}",
+                        "service": "${SERVICE_NAME:-unknown}",
                         "trace": "%X{traceId:-}",
                         "span": "%X{spanId:-}",
                         "pid": "${PID:-}",
