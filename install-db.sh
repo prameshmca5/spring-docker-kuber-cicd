@@ -33,7 +33,8 @@ chmod +x ./force-delete-pods.sh
 echo "=> Cleaning up existing PVCs to allow Helm to manage them..."
 chmod +x ./force-delete-pvc.sh
 ./force-delete-pvc.sh || true
-$SCRIPT_DIR/reset-pvs.sh || true
+chmod +x ./reset-pvs.sh
+./reset-pvs.sh || true
 # Wait for PVCs to be truly gone
 while $KUBECTL get pvc -n $NAMESPACE 2>/dev/null | grep -q .; do
   echo "Still waiting for PVCs in $NAMESPACE to be deleted..."
