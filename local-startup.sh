@@ -17,7 +17,8 @@ fi
 
 # 2. Kill existing port-forwards
 echo -e "${BLUE}Step 2: Cleaning up old port-forwards...${NC}"
-pkill -f "kubectl port-forward --namespace=ingress-nginx service/ingress-nginx-controller 8888:80" || true
+pkill -f "kubectl port-forward.*ingress-nginx" 2>/dev/null || true
+sleep 1
 
 # 3. Wait for Pods to start
 echo -e "${BLUE}Step 3: Waiting for Kubernetes Pods to become Ready...${NC}"
@@ -51,17 +52,29 @@ if [ "$URL_READY" = false ]; then
 fi
 
 echo ""
-echo -e "${BLUE}Step 4: Starting Ingress Port-Forward on Port 8888...${NC}"
-# Run port-forward in the background and redirect output to a log file
-nohup kubectl port-forward --namespace=ingress-nginx service/ingress-nginx-controller 8888:80 > /tmp/k8s-portforward.log 2>&1 &
+echo -e "${BLUE}Step 4: Starting Ingress Port-Forward on Port 80 (requires sudo)...${NC}"
+echo -e "${YELLOW}You may be prompted for your password to bind to port 80.${NC}"
+# Run port-forward on port 80 so all .local domains work without a port number
+nohup sudo kubectl port-forward --namespace=ingress-nginx service/ingress-nginx-controller 80:80 --address=127.0.0.1 > /tmp/k8s-portforward.log 2>&1 &
 sleep 3 # Give it a moment to bind
+
+# Verify port-forward is listening
+if lsof -nP -iTCP:80 -sTCP:LISTEN 2>/dev/null | grep -q "kubectl\|sudo"; then
+  echo -e "${GREEN}✅ Port-forward active on port 80${NC}"
+else
+  echo -e "${RED}⚠️  Port-forward may not have started. Check: cat /tmp/k8s-portforward.log${NC}"
+fi
 
 echo -e "${BLUE}==========================================${NC}"
 echo -e "${GREEN}SYSTEM IS READY!${NC}"
 echo -e "${BLUE}==========================================${NC}"
-echo -e "You can now access your application at:"
-echo -e "👉 ${GREEN}http://qactsai.local:8888/login${NC}"
+echo -e "You can now access your services at:"
+echo -e "👉 ${GREEN}http://qactsai.local/login${NC}           (Frontend)"
+echo -e "👉 ${GREEN}http://jaeger.local${NC}                   (Jaeger Tracing)"
+echo -e "👉 ${GREEN}http://kibana.local${NC}                   (Kibana Logs)"
+echo -e "👉 ${GREEN}http://grafana.local${NC}                  (Grafana Metrics)"
+echo -e "👉 ${GREEN}http://prometheus.local${NC}               (Prometheus)"
 echo ""
-echo -e "To stop the port-forward later, run: ${RED}pkill -f 'kubectl port-forward'${NC}"
-echo -e "To view cluster status, run: ${BLUE}kubectl get pods -A${NC}"
+echo -e "To stop port-forward: ${RED}pkill -f 'kubectl port-forward'${NC}"
+echo -e "To view cluster status: ${BLUE}kubectl get pods -A${NC}"
 echo ""
