@@ -7,6 +7,10 @@ metadata:
     k8s-app: filebeat
 data:
   filebeat.yml: |-
+    setup.dashboards.enabled: true
+    setup.kibana:
+      host: "kibana:5601"
+      
     filebeat.inputs:
     - type: container
       paths:
