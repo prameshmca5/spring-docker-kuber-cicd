@@ -66,8 +66,10 @@ if lsof -nP -iTCP:80 -sTCP:LISTEN 2>/dev/null | grep -q "kubectl\|sudo"; then
     echo -e "👉 ${GREEN}http://kibana.local${NC}"
     echo -e "👉 ${GREEN}http://grafana.local${NC}"
     echo -e "👉 ${GREEN}http://prometheus.local${NC}"
+    echo -e "👉 ${GREEN}http://kafka-ui.local${NC}"
     echo ""
     echo -e "${YELLOW}Note: If pages don't load, check /tmp/k8s-portforward-80.log${NC}"
+    echo -e "${YELLOW}Note: Ensure '127.0.0.1 kafka-ui.local' is in your /etc/hosts file.${NC}"
 else
     echo -e "${RED}Error: Port 80 could not be bound. Checking log...${NC}"
     cat /tmp/k8s-portforward-80.log
