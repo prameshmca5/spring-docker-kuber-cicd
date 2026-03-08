@@ -6,6 +6,7 @@ metadata:
   name: {{ .Values.name }}-pvc
   namespace: {{ .Values.namespace }}
 spec:
+  volumeName: {{ replace "-" "-pv-" .Values.name }}
   accessModes:
     - ReadWriteOnce
   resources:
@@ -70,6 +71,7 @@ metadata:
   name: {{ .Values.name }}-pvc
   namespace: {{ .Values.namespace }}
 spec:
+  volumeName: {{ replace "-" "-pv-" .Values.name }}
   accessModes:
     - ReadWriteOnce
   resources:
@@ -133,6 +135,7 @@ metadata:
   name: {{ .Values.name }}-pvc
   namespace: {{ .Values.namespace }}
 spec:
+  volumeName: {{ replace "-" "-pv-" .Values.name }}
   accessModes:
     - ReadWriteOnce
   resources:
