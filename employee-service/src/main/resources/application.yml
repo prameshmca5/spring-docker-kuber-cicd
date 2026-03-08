@@ -1,3 +1,7 @@
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+
 spring:
   application:
     name: employee-service
@@ -31,7 +35,13 @@ management:
   endpoints:
     web:
       exposure:
-        include: health
+        include: "*"
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://jaeger.monitoring.svc.cluster.local:4318/v1/traces
 
 eureka:
   client:

@@ -1,3 +1,7 @@
+logging:
+    pattern:
+        level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+
 server:
     port: 8087
 
@@ -38,3 +42,9 @@ management:
             probes:
                 enabled: true
             show-details: always
+    tracing:
+        sampling:
+            probability: 1.0
+    otlp:
+        tracing:
+            endpoint: http://jaeger.monitoring.svc.cluster.local:4318/v1/traces
