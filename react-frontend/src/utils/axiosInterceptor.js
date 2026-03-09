@@ -5,6 +5,29 @@
 
 import { networkLogger, apiLogger } from './logger';
 
+// Store current auth token globally for all axios instances
+let currentAuthToken = localStorage.getItem('token') || '';
+
+/**
+ * Set the authorization token globally
+ * Called from AuthContext when token changes
+ */
+export const setAuthToken = (token) => {
+  currentAuthToken = token || '';
+  if (token) {
+    localStorage.setItem('token', token);
+    apiLogger.debug('Auth token updated', { hasToken: !!token });
+  } else {
+    localStorage.removeItem('token');
+    apiLogger.debug('Auth token cleared');
+  }
+};
+
+/**
+ * Get current auth token
+ */
+export const getAuthToken = () => currentAuthToken;
+
 /**
  * Setup request interceptor
  */
@@ -15,12 +38,25 @@ export const setupRequestInterceptor = (axiosInstance) => {
       const requestId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       config.requestId = requestId;
 
-      // Log the request
+      // Add authorization header if token exists
+      if (currentAuthToken) {
+        config.headers.Authorization = `Bearer ${currentAuthToken}`;
+        apiLogger.debug('Auth header added', { requestId, hasToken: true });
+      } else {
+        apiLogger.debug('No auth token available', { requestId });
+      }
+
+      // Log the request (excluding sensitive auth header details)
+      const headersForLog = { ...config.headers };
+      if (headersForLog.Authorization) {
+        headersForLog.Authorization = '[REDACTED]';
+      }
+
       networkLogger.logRequest(
         config.method?.toUpperCase(),
         `${config.baseURL || ''}${config.url}`,
         config.data,
-        config.headers
+        headersForLog
       );
 
       apiLogger.debug(
@@ -30,6 +66,7 @@ export const setupRequestInterceptor = (axiosInstance) => {
           method: config.method,
           endpoint: config.url,
           hasData: !!config.data,
+          hasAuth: !!currentAuthToken,
           timeout: config.timeout,
         }
       );
@@ -75,24 +112,52 @@ export const setupResponseInterceptor = (axiosInstance) => {
       const status = response?.status || 0;
       const errorMessage = response?.data?.message || message || 'Unknown error';
 
-      // Log error response
-      networkLogger.logError(requestId, status, error, errorMessage);
+      // Handle 401 Unauthorized specifically
+      if (status === 401) {
+        apiLogger.warn(
+          `🔐 Unauthorized Access - Check Authentication`,
+          {
+            requestId,
+            endpoint: config?.url,
+            method: config?.method,
+            reason: 'Bearer token missing, invalid, or expired',
+            hasToken: !!currentAuthToken,
+            tokenLength: currentAuthToken?.length || 0,
+            errorMessage,
+          }
+        );
 
-      apiLogger.error(
-        `API request failed`,
-        {
-          requestId,
-          status,
-          endpoint: config?.url,
-          method: config?.method,
-          errorMessage,
-          errorData: response?.data,
+        // Clear invalid token
+        if (currentAuthToken) {
+          apiLogger.info('Clearing invalid token from 401 response');
+          setAuthToken('');
         }
-      );
+      } else {
+        // Log other error responses
+        networkLogger.logError(requestId, status, error, errorMessage);
+
+        apiLogger.error(
+          `API request failed`,
+          {
+            requestId,
+            status,
+            endpoint: config?.url,
+            method: config?.method,
+            errorMessage,
+            errorData: response?.data,
+            hasAuth: !!currentAuthToken,
+          }
+        );
+      }
 
       // Add more context to the error
       error.requestId = requestId;
       error.timestamp = new Date().toISOString();
+      error.authStatus = {
+        hasToken: !!currentAuthToken,
+        status: status,
+        message: errorMessage,
+      };
 
       return Promise.reject(error);
     }
