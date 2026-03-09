@@ -47,15 +47,29 @@ sudo pkill -f "kubectl port-forward.*80:80" 2>/dev/null || true
 pkill -f "kubectl port-forward.*8888:80" 2>/dev/null || true
 sleep 1
 
-# 5. Start Port-Forward on Port 80
-echo -e "${BLUE}Step 5: Starting Ingress Port-Forward on Port 80...${NC}"
+# 5. Detect Local IP for Whitelisting
+echo -e "${BLUE}Step 5: Detecting local IP for database whitelisting...${NC}"
+LOCAL_IP=$(ipconfig getifaddr en0 || ipconfig getifaddr en1 || echo "127.0.0.1")
+echo -e "${GREEN}Detected Local IP: ${LOCAL_IP}${NC}"
+
+# 6. Apply Whitelist to Databases and Ingress
+echo -e "${BLUE}Step 6: Access-Restricting Database Services (Whitelisting)...${NC}"
+DB_SVCS=$(kubectl get svc -n db -o name | grep -E "mysql|postgres")
+for svc in $DB_SVCS; do
+    kubectl patch $svc -n db -p "{\"spec\":{\"type\":\"LoadBalancer\",\"loadBalancerSourceRanges\":[\"${LOCAL_IP}/32\",\"127.0.0.1/32\"]}}" 2>/dev/null
+done
+kubectl patch svc ingress-nginx-controller -n ingress-nginx -p "{\"spec\":{\"loadBalancerSourceRanges\":[\"${LOCAL_IP}/32\",\"127.0.0.1/32\"]}}" 2>/dev/null
+echo -e "${GREEN}IP Whitelist applied to Ingress and Databases (${LOCAL_IP}).${NC}"
+
+# 7. Start Port-Forward on Port 80
+echo -e "${BLUE}Step 7: Starting Ingress Port-Forward on Port 80...${NC}"
 # Use sudo to bind to port 80
 nohup sudo kubectl port-forward --namespace=ingress-nginx service/ingress-nginx-controller 80:80 --address=127.0.0.1 > /tmp/k8s-portforward-80.log 2>&1 &
 
 # Wait for binding
 sleep 4
 
-# 6. Verify and Final Check
+# 8. Verify and Final Check
 if lsof -nP -iTCP:80 -sTCP:LISTEN 2>/dev/null | grep -q "kubectl\|sudo"; then
     echo -e "${SUCCESS}================================================${NC}"
     echo -e "${GREEN}🚀 ALL SERVICES ARE READY ON PORT 80!${NC}"
@@ -68,8 +82,13 @@ if lsof -nP -iTCP:80 -sTCP:LISTEN 2>/dev/null | grep -q "kubectl\|sudo"; then
     echo -e "👉 ${GREEN}http://prometheus.local${NC}"
     echo -e "👉 ${GREEN}http://kafka-ui.local${NC}"
     echo ""
+    echo -e "${HEADER}Database Access (Whitelisted to ${LOCAL_IP}):${NC}"
+    echo -e "Postgres: ${GREEN}springbootapp-db-postgres.db.svc.cluster.local:5432${NC}"
+    echo -e "MySQL:    ${GREEN}mysql.db.svc.cluster.local:3306${NC}"
+    echo ""
     echo -e "${YELLOW}Note: If pages don't load, check /tmp/k8s-portforward-80.log${NC}"
-    echo -e "${YELLOW}Note: Ensure '127.0.0.1 kafka-ui.local' is in your /etc/hosts file.${NC}"
+    echo -e "${YELLOW}Note: Ensure the following are in your /etc/hosts file:${NC}"
+    echo -e "      127.0.0.1 kafka-ui.local mysql.db postgres.db"
 else
     echo -e "${RED}Error: Port 80 could not be bound. Checking log...${NC}"
     cat /tmp/k8s-portforward-80.log
