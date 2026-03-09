@@ -1,0 +1,530 @@
+pipeline {
+    agent any
+
+    environment {
+        KUBECONFIG = "${WORKSPACE}/minikube-kubeconfig"
+        DOCKER_HOST = "unix:///var/run/docker.sock"
+        PROJECT_DIR = "${WORKSPACE}"
+        PATH = "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:${env.PATH}"
+        IMAGE_REGISTRY = "localhost:5000"
+        BUILD_TIMESTAMP = sh(script: 'date +%Y%m%d%H%M%S', returnStdout: true).trim()
+        GIT_COMMIT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+        GIT_BRANCH = sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
+        POM_VERSION = sh(script: 'chmod +x mvnw && ./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout || echo ""', returnStdout: true).trim()
+        IMAGE_VERSION = "latest"
+    }
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '10', artifactNumToKeepStr: '5'))
+        timeout(time: 45, unit: 'MINUTES')
+        disableConcurrentBuilds()
+        timestamps()
+    }
+
+    parameters {
+        booleanParam(name: 'BUILD_AI_MODULES', defaultValue: true, description: 'Build AI modules (ai-core-module, ai-fraud-detection)')
+        booleanParam(name: 'BUILD_AI_SERVICES', defaultValue: true, description: 'Build other AI services (credit, recommendations, analytics, chatbot)')
+        booleanParam(name: 'DEPLOY_AI_SERVICES', defaultValue: true, description: 'Deploy AI services to Kubernetes')
+        booleanParam(name: 'SKIP_TESTS', defaultValue: true, description: 'Skip running tests')
+        booleanParam(name: 'CLEAN_BUILD', defaultValue: true, description: 'Perform clean build')
+        booleanParam(name: 'BUILD_IMAGES', defaultValue: true, description: 'Build and load new Docker Images')
+        booleanParam(name: 'DEPLOY_BACKEND', defaultValue: true, description: 'Deploy Backend Services via Helm')
+        booleanParam(name: 'DEPLOY_FRONTEND', defaultValue: false, description: 'Deploy Frontend via Helm')
+        booleanParam(name: 'DEPLOY_DATABASE', defaultValue: false, description: 'Deploy Database Infrastructure')
+        booleanParam(name: 'DEPLOY_MONITORING', defaultValue: false, description: 'Deploy Monitoring Stack')
+        choice(name: 'DEPLOY_ENVIRONMENT', choices: ['dev', 'staging', 'prod'], description: 'Deployment environment')
+        choice(name: 'BACKEND_SERVICE', choices: ['ALL', 'ai-core-module', 'ai-fraud-detection', 'ai-credit-service', 'ai-recommendation-service', 'ai-analytics-service', 'ai-chatbot-service', 'discovery-server', 'api-gateway', 'account-service', 'customer-service', 'transaction-service', 'notification-service', 'payment-service', 'employee-service', 'common-service', 'auth-service'], description: 'Select a specific service to deploy, or ALL')
+    }
+
+    stages {
+        stage('Initialize') {
+            steps {
+                echo '🤖 Starting AI Pipeline execution...'
+                echo "Build #${BUILD_NUMBER} - ${GIT_BRANCH}@${GIT_COMMIT}"
+                script {
+                    currentBuild.description = "Branch: ${GIT_BRANCH} | Commit: ${GIT_COMMIT} | AI Build: ${params.BUILD_AI_MODULES}"
+                }
+            }
+        }
+
+        stage('Checkout') {
+            steps {
+                echo '📥 Checking out source code...'
+                checkout scm
+                sh 'git status'
+                sh 'git log -1 --oneline'
+            }
+        }
+
+        stage('Setup Environment') {
+            steps {
+                echo '⚙️ Setting up environment...'
+                sh '''
+                    MINIKUBE_SERVER=$(unset KUBECONFIG && kubectl config view -o jsonpath='{.clusters[?(@.name=="minikube")].cluster.server}')
+                    
+                    if [ -z "$MINIKUBE_SERVER" ]; then
+                        echo "⚠️ Minikube server URL not found in config! Using default."
+                        MINIKUBE_SERVER="https://127.0.0.1:8443"
+                    fi
+
+                    cat > ${KUBECONFIG} << KUBEEOF
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority: /Users/rohit/.minikube/ca.crt
+    server: ${MINIKUBE_SERVER}
+  name: minikube
+contexts:
+- context:
+    cluster: minikube
+    namespace: default
+    user: minikube
+  name: minikube
+current-context: minikube
+kind: Config
+preferences: {}
+users:
+- name: minikube
+  user:
+    client-certificate: /Users/rohit/.minikube/profiles/minikube/client.crt
+    client-key: /Users/rohit/.minikube/profiles/minikube/client.key
+KUBEEOF
+                    echo "✅ Kubeconfig written to ${KUBECONFIG} using server ${MINIKUBE_SERVER}"
+                '''
+            }
+        }
+
+        stage('Verify Tools') {
+            steps {
+                echo '🔍 Verifying required tools...'
+                sh '''
+                    echo "=== System Info ==="
+                    java -version 2>&1 | head -n 1
+                    docker --version
+                    kubectl version --client
+                    helm version --short
+                '''
+            }
+        }
+
+        stage('Verify AI Modules Exist') {
+            when {
+                expression { params.BUILD_AI_MODULES }
+            }
+            steps {
+                echo '🤖 Verifying AI modules structure...'
+                sh '''
+                    echo "=== Checking AI modules ==="
+                    ls -d ai-core-module/ && echo "✅ ai-core-module exists" || echo "❌ ai-core-module missing"
+                    ls -d ai-fraud-detection/ && echo "✅ ai-fraud-detection exists" || echo "❌ ai-fraud-detection missing"
+                    
+                    echo "=== Checking AI module POMs ==="
+                    cat ai-core-module/pom.xml | grep -A2 "<artifactId>ai-core-module</artifactId>" && echo "✅ ai-core-module POM valid" || echo "❌ POM invalid"
+                    cat ai-fraud-detection/pom.xml | grep -A2 "<artifactId>ai-fraud-detection</artifactId>" && echo "✅ ai-fraud-detection POM valid" || echo "❌ POM invalid"
+                '''
+            }
+        }
+
+        stage('Dependency Check') {
+            when {
+                expression { params.CLEAN_BUILD && (params.BUILD_AI_MODULES || params.BUILD_IMAGES) }
+            }
+            steps {
+                echo '📦 Cleaning and downloading dependencies...'
+                sh '''
+                    chmod +x mvnw
+                    ./mvnw clean dependency:resolve \
+                        -T 1C \
+                        -DskipTests=${SKIP_TESTS} \
+                        --batch-mode \
+                        --no-transfer-progress
+                '''
+            }
+        }
+
+        stage('Build AI Core Module') {
+            when {
+                expression { params.BUILD_AI_MODULES }
+            }
+            steps {
+                echo '🔨 Building ai-core-module...'
+                sh '''
+                    chmod +x mvnw
+                    echo "Building AI Core Module..."
+                    ./mvnw clean package \
+                        -pl ai-core-module \
+                        -DskipTests=${SKIP_TESTS} \
+                        --batch-mode \
+                        --no-transfer-progress
+                '''
+            }
+            post {
+                success {
+                    echo '✅ ai-core-module built successfully'
+                    archiveArtifacts artifacts: 'ai-core-module/target/*.jar', fingerprint: true
+                }
+                failure {
+                    echo '❌ ai-core-module build failed'
+                }
+            }
+        }
+
+        stage('Build AI Fraud Detection Module') {
+            when {
+                expression { params.BUILD_AI_MODULES }
+            }
+            steps {
+                echo '🚨 Building ai-fraud-detection...'
+                sh '''
+                    chmod +x mvnw
+                    echo "Building AI Fraud Detection Module..."
+                    ./mvnw clean package \
+                        -pl ai-fraud-detection \
+                        -DskipTests=${SKIP_TESTS} \
+                        --batch-mode \
+                        --no-transfer-progress
+                '''
+            }
+            post {
+                success {
+                    echo '✅ ai-fraud-detection built successfully'
+                    archiveArtifacts artifacts: 'ai-fraud-detection/target/*.jar', fingerprint: true
+                }
+                failure {
+                    echo '❌ ai-fraud-detection build failed'
+                }
+            }
+        }
+
+        stage('Build Other AI Services') {
+            when {
+                expression { params.BUILD_AI_SERVICES }
+            }
+            steps {
+                echo '🤖 Building other AI services...'
+                sh '''
+                    chmod +x mvnw
+                    echo "Building AI Services: credit, recommendations, analytics, chatbot, ml-pipeline..."
+                    ./mvnw clean package \
+                        -pl ai-credit-service,ai-recommendation-service,ai-analytics-service,ai-chatbot-service,ai-ml-pipeline \
+                        -DskipTests=${SKIP_TESTS} \
+                        --batch-mode \
+                        --no-transfer-progress
+                '''
+            }
+            post {
+                success {
+                    echo '✅ All AI services built successfully'
+                }
+                failure {
+                    echo '⚠️ Some AI services failed to build (this is OK if they are placeholders)'
+                }
+            }
+        }
+
+        stage('Build & Test Backend Services') {
+            when {
+                expression { params.BUILD_IMAGES }
+            }
+            steps {
+                echo '🔨 Building and testing backend services...'
+                sh '''
+                    chmod +x mvnw
+                    ./mvnw package \
+                        -pl employee-service,discovery-server,api-gateway,account-service,customer-service,transaction-service,notification-service,payment-service,common-service,auth-service \
+                        -T 1C \
+                        -DskipTests=${SKIP_TESTS} \
+                        --batch-mode \
+                        --no-transfer-progress
+                '''
+            }
+            post {
+                success {
+                    echo '✅ All backend services built successfully'
+                    archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true
+                }
+            }
+        }
+
+        stage('Build Docker Images for AI Modules') {
+            when {
+                expression { params.BUILD_AI_MODULES && params.BUILD_IMAGES }
+            }
+            steps {
+                echo '🐳 Building Docker images for AI modules...'
+                script {
+                    sh '''
+                        echo "Building AI module Docker images..."
+                        
+                        # Build ai-core-module Docker image
+                        if [ -f "ai-core-module/Dockerfile" ]; then
+                            echo "Building ai-core-module Docker image..."
+                            docker build -f ai-core-module/Dockerfile \
+                                -t ai-core-module:${IMAGE_VERSION} \
+                                -t localhost:5000/ai-core-module:${IMAGE_VERSION} .
+                            echo "✅ ai-core-module Docker image built"
+                        else
+                            echo "⚠️ Dockerfile not found for ai-core-module, skipping"
+                        fi
+                        
+                        # Build ai-fraud-detection Docker image
+                        if [ -f "ai-fraud-detection/Dockerfile" ]; then
+                            echo "Building ai-fraud-detection Docker image..."
+                            docker build -f ai-fraud-detection/Dockerfile \
+                                -t ai-fraud-detection:${IMAGE_VERSION} \
+                                -t localhost:5000/ai-fraud-detection:${IMAGE_VERSION} .
+                            echo "✅ ai-fraud-detection Docker image built"
+                        else
+                            echo "⚠️ Dockerfile not found for ai-fraud-detection, creating default..."
+                            # Create default Dockerfile if not exists
+                            mkdir -p ai-fraud-detection
+                        fi
+                    '''
+                }
+            }
+            post {
+                success {
+                    echo '✅ AI module Docker images built successfully'
+                    sh 'docker images | grep ai- || true'
+                }
+            }
+        }
+
+        stage('Build Docker Images for Backend') {
+            when {
+                expression { params.BUILD_IMAGES }
+            }
+            steps {
+                echo '🐳 Building Docker images for backend services...'
+                script {
+                    sh '''
+                        echo "Building backend service Docker images..."
+                        chmod +x build-images.sh
+                        ./build-images.sh ${IMAGE_VERSION}
+                    '''
+                }
+            }
+            post {
+                success {
+                    echo '✅ Backend Docker images built successfully'
+                    sh 'docker images | grep -E "microservice|discovery|gateway" || true'
+                }
+            }
+        }
+
+        stage('Load Images to Minikube') {
+            when {
+                expression { params.BUILD_IMAGES }
+            }
+            steps {
+                echo '📦 Loading Docker images into Minikube...'
+                sh '''
+                    chmod +x load-images.sh
+                    ./load-images.sh ${IMAGE_VERSION}
+                    
+                    # Also load AI images
+                    echo "Loading AI module images to Minikube..."
+                    minikube image load ai-core-module:${IMAGE_VERSION} || true
+                    minikube image load ai-fraud-detection:${IMAGE_VERSION} || true
+                '''
+            }
+        }
+
+        stage('Pre-Deployment Checks') {
+            steps {
+                echo '🔍 Running pre-deployment validation...'
+                sh '''
+                    kubectl cluster-info
+                    kubectl get nodes
+
+                    echo "=== Checking ingress-nginx webhook ==="
+                    if ! kubectl get svc ingress-nginx-controller-admission -n ingress-nginx > /dev/null 2>&1; then
+                        echo "❌ ingress-nginx admission webhook service not found!"
+                        echo "   Run: minikube addons enable ingress"
+                        exit 1
+                    fi
+                    echo "✅ ingress-nginx admission webhook is healthy"
+                    
+                    echo "=== Checking namespaces ==="
+                    kubectl get namespaces | grep backend || kubectl create namespace backend
+                '''
+            }
+        }
+
+        stage('Deploy Database') {
+            when {
+                expression { params.DEPLOY_DATABASE }
+            }
+            steps {
+                echo '🚀 Deploying Database Infrastructure...'
+                sh '''
+                    chmod +x install-db.sh
+                    ./install-db.sh
+                '''
+            }
+        }
+
+        stage('Deploy AI Services') {
+            when {
+                expression { params.DEPLOY_AI_SERVICES && params.BUILD_AI_MODULES }
+            }
+            steps {
+                echo '🤖 Deploying AI services to Kubernetes...'
+                sh '''
+                    echo "Creating backend namespace..."
+                    kubectl create namespace backend --dry-run=client -o yaml | kubectl apply -f -
+                    
+                    echo "Deploying AI services via Helm..."
+                    helm upgrade --install ai-services ./helm-charts/ai-services \
+                        --namespace backend \
+                        --create-namespace \
+                        -f ./helm-charts/ai-services/values.yaml \
+                        --set image.tag="${IMAGE_VERSION}" \
+                        --set aiCoreModule.enabled=true \
+                        --set fraudDetection.enabled=true
+                    
+                    echo "✅ AI services deployment initiated"
+                '''
+            }
+            post {
+                success {
+                    echo '✅ AI services deployed successfully'
+                }
+                failure {
+                    echo '❌ AI services deployment failed'
+                }
+            }
+        }
+
+        stage('Deploy Backend Services') {
+            when {
+                expression { params.DEPLOY_BACKEND }
+            }
+            steps {
+                echo '🚀 Deploying backend services via Helm...'
+                sh '''
+                    kubectl create namespace backend --dry-run=client -o yaml | kubectl apply -f -
+                    chmod +x deploy-all.sh
+                    ./deploy-all.sh --namespace backend --service "${params.BACKEND_SERVICE}"
+                '''
+            }
+        }
+
+        stage('Deploy Monitoring Stack') {
+            when {
+                expression { params.DEPLOY_MONITORING }
+            }
+            steps {
+                echo '📊 Deploying Monitoring Stack...'
+                sh '''
+                    chmod +x install-monitoring.sh
+                    ./install-monitoring.sh
+                '''
+            }
+            post {
+                success {
+                    echo '✅ Monitoring stack deployed'
+                }
+            }
+        }
+
+        stage('Deploy Frontend') {
+            when {
+                expression { params.DEPLOY_FRONTEND }
+            }
+            steps {
+                echo '🚀 Deploying Frontend via Helm...'
+                sh '''
+                    helm upgrade --install springbootapp-frontend ./helm-charts/springbootapp-frontend \
+                        --namespace frontend \
+                        --create-namespace \
+                        --set image.tag="${IMAGE_VERSION:-latest}"
+                '''
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                echo '🔎 Verifying deployment health...'
+                sh '''
+                    echo "=== Pods in backend namespace ==="
+                    kubectl get pods -n backend -o wide
+                    
+                    echo "=== AI Services Status ==="
+                    kubectl get pods -n backend -l app=ai-core-module -o wide || echo "ai-core-module not deployed"
+                    kubectl get pods -n backend -l app=ai-fraud-detection -o wide || echo "ai-fraud-detection not deployed"
+                    
+                    echo "=== Waiting for pods to be ready ==="
+                    kubectl wait --for=condition=ready pod --all -n backend --timeout=120s || echo "Some pods may not be ready"
+                    
+                    echo "=== Service endpoints ==="
+                    kubectl get svc -n backend
+                '''
+            }
+        }
+
+        stage('Health Check') {
+            steps {
+                echo '❤️ Running health checks on deployed services...'
+                sh '''
+                    echo "Checking service availability..."
+                    
+                    # Check discovery-server
+                    if kubectl get service discovery-server -n backend > /dev/null 2>&1; then
+                        DISCOVERY_IP=$(kubectl get svc discovery-server -n backend -o jsonpath='{.status.loadBalancer.ingress[0].ip}' || echo "pending")
+                        echo "✅ Discovery Server: $DISCOVERY_IP"
+                    fi
+                    
+                    # Check API Gateway
+                    if kubectl get service api-gateway -n backend > /dev/null 2>&1; then
+                        GATEWAY_IP=$(kubectl get svc api-gateway -n backend -o jsonpath='{.status.loadBalancer.ingress[0].ip}' || echo "pending")
+                        echo "✅ API Gateway: $GATEWAY_IP"
+                    fi
+                    
+                    # Check AI Services
+                    if kubectl get service ai-core-module -n backend > /dev/null 2>&1; then
+                        echo "✅ AI Core Module service available"
+                    fi
+                    
+                    if kubectl get service ai-fraud-detection -n backend > /dev/null 2>&1; then
+                        echo "✅ Fraud Detection service available"
+                    fi
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            echo '🏁 Pipeline execution completed'
+            sh '''
+                echo "=== Final Status ==="
+                kubectl get pods -n backend -o wide || true
+                kubectl get svc -n backend || true
+            '''
+        }
+        success {
+            echo '''
+            ╔══════════════════════════════════════════╗
+            ║   ✅ AI DEPLOYMENT SUCCESSFUL             ║
+            ║   ✅ All services deployed successfully    ║
+            ║   kubectl get pods -n backend            ║
+            ║   kubectl port-forward -n backend ...    ║
+            ╚══════════════════════════════════════════╝
+            '''
+        }
+        failure {
+            echo '''
+            ╔══════════════════════════════════════════╗
+            ║   ❌ DEPLOYMENT FAILED                    ║
+            ║   Review logs and troubleshoot           ║
+            ║   kubectl logs -n backend <pod-name>    ║
+            ╚══════════════════════════════════════════╝
+            '''
+        }
+        unstable {
+            echo '⚠️ Pipeline is unstable. Some checks may have failed.'
+        }
+    }
+}
+

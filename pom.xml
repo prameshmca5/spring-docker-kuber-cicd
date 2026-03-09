@@ -26,6 +26,16 @@
     </properties>
 
     <modules>
+        <!-- Core AI Modules -->
+        <module>ai-core-module</module>
+        <module>ai-fraud-detection</module>
+        <module>ai-credit-service</module>
+        <module>ai-recommendation-service</module>
+        <module>ai-analytics-service</module>
+        <module>ai-chatbot-service</module>
+        <module>ai-ml-pipeline</module>
+
+        <!-- Backend Services -->
         <module>employee-service</module>
         <module>discovery-server</module>
         <module>api-gateway</module>

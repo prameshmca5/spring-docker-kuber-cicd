@@ -1,0 +1,133 @@
+{{- if .Values.fraudDetection.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.fraudDetection.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.fraudDetection.name }}
+    version: v1
+spec:
+  type: {{ .Values.fraudDetection.service.type }}
+  ports:
+    - port: {{ .Values.fraudDetection.service.port }}
+      targetPort: {{ .Values.fraudDetection.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ .Values.fraudDetection.name }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.fraudDetection.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.fraudDetection.name }}
+spec:
+  replicas: {{ .Values.fraudDetection.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.fraudDetection.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.fraudDetection.name }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9001"
+        prometheus.io/path: "/actuator/prometheus"
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: {{ .Values.fraudDetection.name }}
+        image: "{{ .Values.fraudDetection.image.repository }}:{{ .Values.fraudDetection.image.tag }}"
+        imagePullPolicy: {{ .Values.fraudDetection.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.fraudDetection.service.targetPort }}
+          protocol: TCP
+        env:
+        - name: SPRING_APPLICATION_NAME
+          value: {{ .Values.fraudDetection.name }}
+        - name: SERVER_PORT
+          value: "{{ .Values.fraudDetection.service.targetPort }}"
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          value: {{ .Values.serviceDiscovery.eureka.serverUrl }}
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://{{ .Values.database.postgres.host }}:{{ .Values.database.postgres.port }}/{{ .Values.database.postgres.database }}"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: {{ .Values.database.postgres.username }}
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.database.postgres.passwordSecret }}
+              key: {{ .Values.database.postgres.passwordKey }}
+        - name: SPRING_REDIS_HOST
+          value: {{ .Values.redis.host }}
+        - name: SPRING_REDIS_PORT
+          value: "{{ .Values.redis.port }}"
+        - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+          value: {{ join "," .Values.kafka.brokers }}
+        - name: AI_FRAUD_DAILY_LIMIT
+          value: "{{ .Values.fraudDetection.config.ai.fraud.daily-limit }}"
+        - name: AI_FRAUD_SINGLE_TRANSACTION_LIMIT
+          value: "{{ .Values.fraudDetection.config.ai.fraud.single-transaction-limit }}"
+        - name: AI_FRAUD_MAX_TRANSACTIONS_PER_HOUR
+          value: "{{ .Values.fraudDetection.config.ai.fraud.max-transactions-per-hour }}"
+        - name: AI_FRAUD_VELOCITY_THRESHOLD
+          value: "{{ .Values.fraudDetection.config.ai.fraud.velocity-threshold }}"
+        - name: KAFKA_FRAUD_ALERTS_TOPIC
+          value: {{ .Values.fraudDetection.kafka.topics.fraud-alerts }}
+        - name: KAFKA_MANUAL_REVIEW_TOPIC
+          value: {{ .Values.fraudDetection.kafka.topics.manual-review }}
+        - name: LOGGING_LEVEL_ROOT
+          value: {{ .Values.global.logLevel }}
+        - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+          value: "*"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: http
+          initialDelaySeconds: 35
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: http
+          initialDelaySeconds: 25
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        resources:
+          {{- toYaml .Values.fraudDetection.resources | nindent 12 }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+{{- if .Values.fraudDetection.kafka.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.fraudDetection.name }}-config
+  namespace: {{ .Release.Namespace }}
+data:
+  kafka.properties: |
+    bootstrap.servers={{ join "," .Values.kafka.brokers }}
+    fraud.alerts.topic={{ .Values.fraudDetection.kafka.topics.fraud-alerts }}
+    manual.review.topic={{ .Values.fraudDetection.kafka.topics.manual-review }}
+{{- end }}
+{{- end }}
+
