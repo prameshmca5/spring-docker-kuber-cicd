@@ -8,6 +8,8 @@ server:
 spring:
   application:
     name: notification-service
+  profiles:
+    active: dev
   datasource:
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:notification_db}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     driverClassName: com.mysql.cj.jdbc.Driver
@@ -35,12 +37,12 @@ spring:
         spring.json.use.type.headers: false
         spring.json.value.default.type: com.qacts.notificationservice.NotificationEvent
 
-# Kafka Listener Configuration
-# Enable/Disable Kafka listeners via property
-# Default: true (enabled)
+# Kafka Listener Configuration - DEVELOPMENT PROFILE
+# Listeners are DISABLED by default in development
 kafka:
   listener:
     enabled: ${KAFKA_LISTENER_ENABLED:false}
+    error-handler-enabled: true
 
 eureka:
   client:
@@ -70,3 +72,4 @@ management:
   otlp:
     tracing:
       endpoint: http://jaeger.monitoring.svc.cluster.local:4318/v1/traces
+

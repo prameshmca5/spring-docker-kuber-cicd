@@ -8,15 +8,17 @@ server:
 spring:
   application:
     name: notification-service
+  profiles:
+    active: test
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:notification_db}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:notification_test_db}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     driverClassName: com.mysql.cj.jdbc.Driver
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:root}
   jpa:
     database-platform: org.hibernate.dialect.MySQL8Dialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: create-drop
     show-sql: true
     properties:
       hibernate:
@@ -24,9 +26,9 @@ spring:
         use_sql_comments: true
         generate_statistics: false
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9093}
     consumer:
-      group-id: notification-group
+      group-id: notification-group-test
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
@@ -35,19 +37,18 @@ spring:
         spring.json.use.type.headers: false
         spring.json.value.default.type: com.qacts.notificationservice.NotificationEvent
 
-# Kafka Listener Configuration
-# Enable/Disable Kafka listeners via property
-# Default: true (enabled)
+# Kafka Listener Configuration - TEST PROFILE
+# Can be toggled for testing different scenarios
 kafka:
   listener:
-    enabled: ${KAFKA_LISTENER_ENABLED:false}
+    enabled: ${KAFKA_LISTENER_ENABLED:true}
+    error-handler-enabled: true
 
 eureka:
   client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-  instance:
-    prefer-ip-address: true
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
 
 management:
   endpoints:
@@ -67,6 +68,4 @@ management:
   tracing:
     sampling:
       probability: 1.0
-  otlp:
-    tracing:
-      endpoint: http://jaeger.monitoring.svc.cluster.local:4318/v1/traces
+

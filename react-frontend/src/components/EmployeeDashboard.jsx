@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import EmployeeService from '../services/EmployeeService';
 import EmployeeForm from './EmployeeForm';
 import { Users, Trash2, Mail, Building, LayoutDashboard, Search } from 'lucide-react';
+import { apiLogger } from '../utils/logger';
 
 const EmployeeDashboard = () => {
     const [employees, setEmployees] = useState([]);
@@ -14,9 +15,21 @@ const EmployeeDashboard = () => {
             const response = await EmployeeService.getAllEmployees();
             setEmployees(response.data.data); // data.data because ApiResponse wrapper
             setError(null);
+            apiLogger.info('EmployeeDashboard: Employees fetched successfully', {
+                count: response.data.data.length,
+                status: response.status
+            });
         } catch (err) {
-            console.error("Error fetching employees:", err);
-            setError("Failed to load employee data. Is the backend running?");
+            apiLogger.error('EmployeeDashboard: Error fetching employees', {
+                error: err,
+                status: err.response?.status,
+                data: err.response?.data
+            });
+            if (err.response?.status === 401) {
+                setError("Unauthorized access. Please login again.");
+            } else {
+                setError("Failed to load employee data. Is the backend running?");
+            }
         } finally {
             setLoading(false);
         }

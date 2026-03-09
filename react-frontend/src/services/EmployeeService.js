@@ -14,6 +14,33 @@ const axiosInstance = axios.create({
 // Setup interceptors for automatic logging
 setupAxiosInterceptors(axiosInstance);
 
+// Enhanced logging interceptor
+axiosInstance.interceptors.response.use(
+  response => {
+    apiLogger.info('EmployeeService response', {
+      url: response.config.url,
+      status: response.status,
+      data: response.data
+    });
+    return response;
+  },
+  error => {
+    apiLogger.error('EmployeeService error', {
+      url: error.config?.url,
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    });
+    if (error.response?.status === 401) {
+      apiLogger.warn('Unauthorized (401) error in EmployeeService', {
+        url: error.config?.url,
+        data: error.response?.data
+      });
+    }
+    return Promise.reject(error);
+  }
+);
+
 class EmployeeService {
     getAllEmployees() {
         apiLogger.debug('Fetching all employees', { endpoint: API_URL });
@@ -106,5 +133,3 @@ class EmployeeService {
 }
 
 export default new EmployeeService();
-
-

@@ -8,57 +8,65 @@ server:
 spring:
   application:
     name: notification-service
+  profiles:
+    active: prod
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:notification_db}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://${DB_HOST:mysql.production:3306}/${DB_NAME:notification_db}?useSSL=true&serverTimezone=UTC&allowPublicKeyRetrieval=false
     driverClassName: com.mysql.cj.jdbc.Driver
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:root}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
   jpa:
     database-platform: org.hibernate.dialect.MySQL8Dialect
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: validate
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
-        use_sql_comments: true
+        format_sql: false
+        use_sql_comments: false
         generate_statistics: false
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka.production:9092}
     consumer:
       group-id: notification-group
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      max-poll-records: 500
+      session-timeout-ms: 10000
       properties:
         spring.json.trusted.packages: "*"
         spring.json.use.type.headers: false
         spring.json.value.default.type: com.qacts.notificationservice.NotificationEvent
 
-# Kafka Listener Configuration
-# Enable/Disable Kafka listeners via property
-# Default: true (enabled)
+# Kafka Listener Configuration - PRODUCTION PROFILE
+# Listeners are ENABLED by default in production
 kafka:
   listener:
-    enabled: ${KAFKA_LISTENER_ENABLED:false}
+    enabled: ${KAFKA_LISTENER_ENABLED:true}
+    error-handler-enabled: true
 
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: ${EUREKA_DEFAULT_ZONE:http://eureka.production:8761/eureka/}
+    healthcheck:
+      enabled: true
   instance:
     prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
 
 management:
   endpoints:
     web:
       exposure:
-        include: "*"
+        include: health,metrics,prometheus
   endpoint:
     health:
       probes:
         enabled: true
-      show-details: always
+      show-details: when-authorized
   health:
     livenessstate:
       enabled: true
@@ -66,7 +74,8 @@ management:
       enabled: true
   tracing:
     sampling:
-      probability: 1.0
+      probability: 0.1
   otlp:
     tracing:
-      endpoint: http://jaeger.monitoring.svc.cluster.local:4318/v1/traces
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://jaeger.monitoring:4318/v1/traces}
+
