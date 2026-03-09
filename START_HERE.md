@@ -58,37 +58,6 @@
 
 ---
 
-## 💾 CODE YOU NOW HAVE
-
-### Ready to Use (2 Modules)
-
-**ai-core-module/**
-```
-✅ ModelMetadata.java         - Model registry entity
-✅ ModelRegistry.java         - Model repository
-✅ ModelLoaderService.java    - Model management
-✅ pom.xml                    - Build config
-```
-
-**ai-fraud-detection/**
-```
-✅ FraudScore.java            - Fraud detection result
-✅ RuleBasedFraudDetector.java - Detection algorithm
-✅ pom.xml                    - Build config
-```
-
-### Structure Ready (5 Modules)
-
-```
-ai-credit-service/           - Credit scoring
-ai-recommendation-service/   - Recommendations
-ai-analytics-service/        - Predictive analytics
-ai-chatbot-service/          - Intelligent chatbot
-ai-ml-pipeline/              - ML framework
-```
-
----
-
 ## 🚀 QUICK START (Next 24 Hours)
 
 ### Step 1: Read Documentation
@@ -113,7 +82,7 @@ ai-ml-pipeline/              - ML framework
 cd /Users/rohit/JavaApplication/newSpringKuber/spring-docker-kuber-cicd
 
 # Build AI modules
-mvn clean package -pl ai-core-module,ai-fraud-detection -DskipTests
+mvn clean package -DskipTests
 
 # Should see: BUILD SUCCESS
 ```
@@ -419,5 +388,3 @@ Your intelligent banking system awaits! 💪
 **Next Step:** Read AI_README.md  
 
 Good luck! 🚀
-
-

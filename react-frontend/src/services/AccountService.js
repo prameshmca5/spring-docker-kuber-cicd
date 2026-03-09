@@ -15,6 +15,60 @@ const axiosInstance = axios.create({
 // Setup interceptors for automatic logging
 setupAxiosInterceptors(axiosInstance);
 
+// Enhanced request logging
+axiosInstance.interceptors.request.use(
+  config => {
+    apiLogger.debug('AccountService request', {
+      url: config.url,
+      method: config.method,
+      headers: config.headers,
+      data: config.data,
+      user: localStorage.getItem('username') || 'anonymous'
+    });
+    return config;
+  },
+  error => {
+    apiLogger.error('AccountService request error', {
+      message: error.message,
+      config: error.config,
+      user: localStorage.getItem('username') || 'anonymous'
+    });
+    return Promise.reject(error);
+  }
+);
+
+// Enhanced response logging
+axiosInstance.interceptors.response.use(
+  response => {
+    apiLogger.info('AccountService response', {
+      url: response.config.url,
+      status: response.status,
+      data: response.data,
+      headers: response.headers,
+      user: localStorage.getItem('username') || 'anonymous'
+    });
+    return response;
+  },
+  error => {
+    apiLogger.error('AccountService error', {
+      url: error.config?.url,
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+      headers: error.response?.headers,
+      user: localStorage.getItem('username') || 'anonymous'
+    });
+    if (error.response?.status === 401) {
+      apiLogger.warn('AccountService unauthorized (401)', {
+        url: error.config?.url,
+        user: localStorage.getItem('username') || 'anonymous'
+      });
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 class AccountService {
 
     getAllAccounts() {
@@ -71,5 +125,3 @@ class AccountService {
 }
 
 export default new AccountService();
-
-

@@ -404,5 +404,3 @@ A: For optimal results, yes. Initially, rule-based approach can provide value.
 - Test with sample data before production
 
 **Ready to implement AI in your banking system!** 🚀
-
-

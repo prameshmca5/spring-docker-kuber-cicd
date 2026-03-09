@@ -14,13 +14,37 @@ const axiosInstance = axios.create({
 // Setup interceptors for automatic logging
 setupAxiosInterceptors(axiosInstance);
 
-// Enhanced logging interceptor
+// Enhanced request logging
+axiosInstance.interceptors.request.use(
+  config => {
+    apiLogger.debug('EmployeeService request', {
+      url: config.url,
+      method: config.method,
+      headers: config.headers,
+      data: config.data,
+      user: localStorage.getItem('username') || 'anonymous'
+    });
+    return config;
+  },
+  error => {
+    apiLogger.error('EmployeeService request error', {
+      message: error.message,
+      config: error.config,
+      user: localStorage.getItem('username') || 'anonymous'
+    });
+    return Promise.reject(error);
+  }
+);
+
+// Enhanced response logging
 axiosInstance.interceptors.response.use(
   response => {
     apiLogger.info('EmployeeService response', {
       url: response.config.url,
       status: response.status,
-      data: response.data
+      data: response.data,
+      headers: response.headers,
+      user: localStorage.getItem('username') || 'anonymous'
     });
     return response;
   },
@@ -29,13 +53,17 @@ axiosInstance.interceptors.response.use(
       url: error.config?.url,
       status: error.response?.status,
       data: error.response?.data,
-      message: error.message
+      message: error.message,
+      headers: error.response?.headers,
+      user: localStorage.getItem('username') || 'anonymous'
     });
     if (error.response?.status === 401) {
-      apiLogger.warn('Unauthorized (401) error in EmployeeService', {
+      apiLogger.warn('EmployeeService unauthorized (401)', {
         url: error.config?.url,
-        data: error.response?.data
+        user: localStorage.getItem('username') || 'anonymous'
       });
+      // Optionally redirect to login or show notification
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }

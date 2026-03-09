@@ -111,6 +111,21 @@ const BankingDashboard = () => {
                                     <Activity size={18} className="me-2" /> Kafka Sample
                                 </NavLink>
                             </li>
+                            <li className="nav-item me-3">
+                                <NavLink className={({ isActive }) => `nav-link d-flex align-items-center ${isActive ? 'active fw-bold' : 'text-white-50 hover-opacity'}`} to="/dashboard/employees">
+                                    <User size={18} className="me-2" /> Employees
+                                </NavLink>
+                            </li>
+                            <li className="nav-item me-3">
+                                <NavLink className={({ isActive }) => `nav-link d-flex align-items-center ${isActive ? 'active fw-bold' : 'text-white-50 hover-opacity'}`} to="/dashboard/notifications">
+                                    <Bell size={18} className="me-2" /> Notifications
+                                </NavLink>
+                            </li>
+                            <li className="nav-item me-3">
+                                <NavLink className={({ isActive }) => `nav-link d-flex align-items-center ${isActive ? 'active fw-bold' : 'text-white-50 hover-opacity'}`} to="/dashboard/reports">
+                                    <LayoutDashboard size={18} className="me-2" /> Reports
+                                </NavLink>
+                            </li>
                             <li className="nav-item">
                                 <NavLink className={({ isActive }) => `nav-link d-flex align-items-center ${isActive ? 'active fw-bold' : 'text-white-50 hover-opacity'}`} to="/dashboard/settings">
                                     <Settings size={18} className="me-2" /> Settings
