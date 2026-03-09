@@ -1,5 +1,6 @@
 package com.qacts.notificationservice;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -42,7 +43,8 @@ public class KafkaListenerConfig {
     public org.springframework.kafka.listener.ConsumerAwareListenerErrorHandler kafkaListenerErrorHandler() {
         return (message, exception, consumer) -> {
             String topic = (String) message.getHeaders().get(KafkaHeaders.RECEIVED_TOPIC);
-            Integer partition = (Integer) message.getHeaders().get(KafkaHeaders.RECEIVED_PARTITION_ID);
+            //Integer partition = (Integer) message.getHeaders().get("kafka_receivedPartitionId");
+            Integer partition = (Integer) message.getHeaders().get(KafkaHeaders.RECEIVED_PARTITION);
             Long offset = (Long) message.getHeaders().get(KafkaHeaders.OFFSET);
 
             log.error("Error in Kafka listener. Topic: {}, Partition: {}, Offset: {}, Error: {}",
