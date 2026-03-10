@@ -13,7 +13,7 @@ services:
       - "50000:50000"
     volumes:
       - jenkins_home:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ${DOCKER_SOCKET_PATH:-/var/run/docker.sock}:/var/run/docker.sock
       # Mount the project directory so we can run scripts from it easily (optional, helpful for local)
       - ${PWD}:/workspace
       # Mount minikube and kube config for kubectl and helm access
@@ -22,7 +22,6 @@ services:
       # IMPORTANT: mount to /root/.minikube (not /Users/rohit/.minikube) so cert paths in kubeconfig resolve
       - ~/.minikube:/root/.minikube:ro
     environment:
-      - DOCKER_HOST=unix:///var/run/docker.sock
       # Custom kubeconfig with correct paths and minikube container IP
       - KUBECONFIG=/var/jenkins_home/minikube-kubeconfig
     networks:

@@ -21,6 +21,10 @@ Mac Host (Docker Desktop + Minikube running)
 
 - Docker Desktop must be running.
 - Minikube must be running (`minikube start`).
+- If `/var/run/docker.sock` does not exist on your Mac, use Docker Desktop's user socket:
+  ```bash
+  export DOCKER_SOCKET_PATH="$HOME/.docker/run/docker.sock"
+  ```
 
 ## Starting Jenkins
 
@@ -33,6 +37,8 @@ Mac Host (Docker Desktop + Minikube running)
    ```bash
    docker-compose -f docker-compose-jenkins.yml up -d --build
    ```
+
+   If you exported `DOCKER_SOCKET_PATH`, use the same shell session for this command so Compose mounts the correct socket into the Jenkins container.
 
 3. **Connect Jenkins to minikube network** (only needed on first start, auto-done via compose on restart):
    ```bash
@@ -126,6 +132,21 @@ docker network connect minikube jenkins-local
 
 # Test connectivity:
 docker exec jenkins-local bash -c "KUBECONFIG=/var/jenkins_home/minikube-kubeconfig kubectl cluster-info"
+```
+
+### Jenkins can't reach Docker
+```bash
+# Check whether the host has the default Docker socket
+ls -l /var/run/docker.sock
+
+# If it does not exist, use Docker Desktop's user socket instead
+export DOCKER_SOCKET_PATH="$HOME/.docker/run/docker.sock"
+docker-compose -f docker-compose-jenkins.yml down
+docker-compose -f docker-compose-jenkins.yml up -d --build
+
+# Verify inside the Jenkins container
+docker exec jenkins-local ls -l /var/run/docker.sock
+docker exec jenkins-local docker version
 ```
 
 ### Check current running state
