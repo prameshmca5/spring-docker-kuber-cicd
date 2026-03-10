@@ -1,61 +1,26 @@
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: banking-backend-services
-  namespace: argocd
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
-spec:
-  generators:
-    - list:
-        elements:
-          - service: discovery-server
-            port: 8761
-          - service: api-gateway
-            port: 8080
-          - service: account-service
-            port: 8080
-          - service: customer-service
-            port: 8080
-          - service: transaction-service
-            port: 8080
-          - service: notification-service
-            port: 8080
-          - service: payment-service
-            port: 8080
-          - service: employee-service
-            port: 8080
-          - service: common-service
-            port: 8080
-          - service: auth-service
-            port: 8080
-  template:
+apiVersion: v1
+kind: List
+items:
+  - apiVersion: argoproj.io/v1alpha1
+    kind: Application
     metadata:
-      name: "{{service}}"
+      name: discovery-server
+      namespace: argocd
       labels:
         app.kubernetes.io/part-of: banking-platform
+      annotations:
+        argocd.argoproj.io/sync-wave: "3"
     spec:
-      project: default
+      project: backend
       source:
         repoURL: https://github.com/prameshmca5/spring-docker-kuber-cicd.git
         targetRevision: cicd-docker-k8s-helm-argocd
         path: helm-charts/banking-service
         helm:
-          releaseName: "{{service}}"
-          values: |
-            serviceName: "{{service}}"
-            service:
-              port: {{port}}
-            image:
-              repository: "springbootapps-{{service}}"
-              pullPolicy: IfNotPresent
-              tag: "latest"
-            ingress:
-              enabled: true
-              host: "qactsai.local"
-            activeColor: "blue"
-            color: "blue"
-            createService: true
+          releaseName: discovery-server
+          valueFiles:
+            - values-discovery-server.yaml
+            - ../environments/dev/discovery-server.yaml
       destination:
         server: https://kubernetes.default.svc
         namespace: backend
@@ -63,5 +28,246 @@ spec:
         automated:
           prune: true
           selfHeal: true
-        syncOptions:
-          - CreateNamespace=true
+  - apiVersion: argoproj.io/v1alpha1
+    kind: Application
+    metadata:
+      name: api-gateway
+      namespace: argocd
+      labels:
+        app.kubernetes.io/part-of: banking-platform
+      annotations:
+        argocd.argoproj.io/sync-wave: "3"
+    spec:
+      project: backend
+      source:
+        repoURL: https://github.com/prameshmca5/spring-docker-kuber-cicd.git
+        targetRevision: cicd-docker-k8s-helm-argocd
+        path: helm-charts/banking-service
+        helm:
+          releaseName: api-gateway
+          valueFiles:
+            - values-api-gateway.yaml
+            - ../environments/dev/api-gateway.yaml
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: backend
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+  - apiVersion: argoproj.io/v1alpha1
+    kind: Application
+    metadata:
+      name: account-service
+      namespace: argocd
+      labels:
+        app.kubernetes.io/part-of: banking-platform
+      annotations:
+        argocd.argoproj.io/sync-wave: "3"
+    spec:
+      project: backend
+      source:
+        repoURL: https://github.com/prameshmca5/spring-docker-kuber-cicd.git
+        targetRevision: cicd-docker-k8s-helm-argocd
+        path: helm-charts/banking-service
+        helm:
+          releaseName: account-service
+          valueFiles:
+            - values-account-service.yaml
+            - ../environments/dev/account-service.yaml
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: backend
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+  - apiVersion: argoproj.io/v1alpha1
+    kind: Application
+    metadata:
+      name: customer-service
+      namespace: argocd
+      labels:
+        app.kubernetes.io/part-of: banking-platform
+      annotations:
+        argocd.argoproj.io/sync-wave: "3"
+    spec:
+      project: backend
+      source:
+        repoURL: https://github.com/prameshmca5/spring-docker-kuber-cicd.git
+        targetRevision: cicd-docker-k8s-helm-argocd
+        path: helm-charts/banking-service
+        helm:
+          releaseName: customer-service
+          valueFiles:
+            - values-customer-service.yaml
+            - ../environments/dev/customer-service.yaml
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: backend
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+  - apiVersion: argoproj.io/v1alpha1
+    kind: Application
+    metadata:
+      name: transaction-service
+      namespace: argocd
+      labels:
+        app.kubernetes.io/part-of: banking-platform
+      annotations:
+        argocd.argoproj.io/sync-wave: "3"
+    spec:
+      project: backend
+      source:
+        repoURL: https://github.com/prameshmca5/spring-docker-kuber-cicd.git
+        targetRevision: cicd-docker-k8s-helm-argocd
+        path: helm-charts/banking-service
+        helm:
+          releaseName: transaction-service
+          valueFiles:
+            - values-transaction-service.yaml
+            - ../environments/dev/transaction-service.yaml
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: backend
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+  - apiVersion: argoproj.io/v1alpha1
+    kind: Application
+    metadata:
+      name: notification-service
+      namespace: argocd
+      labels:
+        app.kubernetes.io/part-of: banking-platform
+      annotations:
+        argocd.argoproj.io/sync-wave: "3"
+    spec:
+      project: backend
+      source:
+        repoURL: https://github.com/prameshmca5/spring-docker-kuber-cicd.git
+        targetRevision: cicd-docker-k8s-helm-argocd
+        path: helm-charts/banking-service
+        helm:
+          releaseName: notification-service
+          valueFiles:
+            - values-notification-service.yaml
+            - ../environments/dev/notification-service.yaml
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: backend
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+  - apiVersion: argoproj.io/v1alpha1
+    kind: Application
+    metadata:
+      name: payment-service
+      namespace: argocd
+      labels:
+        app.kubernetes.io/part-of: banking-platform
+      annotations:
+        argocd.argoproj.io/sync-wave: "3"
+    spec:
+      project: backend
+      source:
+        repoURL: https://github.com/prameshmca5/spring-docker-kuber-cicd.git
+        targetRevision: cicd-docker-k8s-helm-argocd
+        path: helm-charts/banking-service
+        helm:
+          releaseName: payment-service
+          valueFiles:
+            - values-payment-service.yaml
+            - ../environments/dev/payment-service.yaml
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: backend
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+  - apiVersion: argoproj.io/v1alpha1
+    kind: Application
+    metadata:
+      name: employee-service
+      namespace: argocd
+      labels:
+        app.kubernetes.io/part-of: banking-platform
+      annotations:
+        argocd.argoproj.io/sync-wave: "3"
+    spec:
+      project: backend
+      source:
+        repoURL: https://github.com/prameshmca5/spring-docker-kuber-cicd.git
+        targetRevision: cicd-docker-k8s-helm-argocd
+        path: helm-charts/banking-service
+        helm:
+          releaseName: employee-service
+          valueFiles:
+            - values-employee-service.yaml
+            - ../environments/dev/employee-service.yaml
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: backend
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+  - apiVersion: argoproj.io/v1alpha1
+    kind: Application
+    metadata:
+      name: common-service
+      namespace: argocd
+      labels:
+        app.kubernetes.io/part-of: banking-platform
+      annotations:
+        argocd.argoproj.io/sync-wave: "3"
+    spec:
+      project: backend
+      source:
+        repoURL: https://github.com/prameshmca5/spring-docker-kuber-cicd.git
+        targetRevision: cicd-docker-k8s-helm-argocd
+        path: helm-charts/banking-service
+        helm:
+          releaseName: common-service
+          valueFiles:
+            - values-common-service.yaml
+            - ../environments/dev/common-service.yaml
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: backend
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+  - apiVersion: argoproj.io/v1alpha1
+    kind: Application
+    metadata:
+      name: auth-service
+      namespace: argocd
+      labels:
+        app.kubernetes.io/part-of: banking-platform
+      annotations:
+        argocd.argoproj.io/sync-wave: "3"
+    spec:
+      project: backend
+      source:
+        repoURL: https://github.com/prameshmca5/spring-docker-kuber-cicd.git
+        targetRevision: cicd-docker-k8s-helm-argocd
+        path: helm-charts/banking-service
+        helm:
+          releaseName: auth-service
+          valueFiles:
+            - values-auth-service.yaml
+            - ../environments/dev/auth-service.yaml
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: backend
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true

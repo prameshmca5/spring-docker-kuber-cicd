@@ -78,12 +78,12 @@ cat > argocd/apps/monitoring.yaml << 'EOF'
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: banking-monitoring
+  name: monitoring
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "3"
 spec:
-  project: default
+  project: monitoring
   source:
     repoURL: https://github.com/prameshmca5/spring-docker-kuber-cicd.git
     targetRevision: cicd-docker-k8s-helm-argocd

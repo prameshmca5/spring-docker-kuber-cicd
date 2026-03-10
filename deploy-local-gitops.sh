@@ -121,13 +121,10 @@ chmod +x ./update-gitops-values.sh
 ./update-gitops-values.sh "${DOCKERHUB_USERNAME}" "${IMAGE_TAG}"
 
 log "Updating ArgoCD repoURL to ${REPO_URL}"
-ARGOCD_FILES=(
-  "argocd/root-application.yaml"
-  "argocd/apps/backend-shared.yaml"
-  "argocd/apps/backend-services.yaml"
-  "argocd/apps/frontend.yaml"
-  "argocd/apps/monitoring.yaml"
-)
+ARGOCD_FILES=()
+while IFS= read -r file; do
+  ARGOCD_FILES+=("${file}")
+done < <(find argocd -type f -name "*.yaml")
 for file in "${ARGOCD_FILES[@]}"; do
   perl -i -pe "s|repoURL: .*|repoURL: ${REPO_URL}|" "${file}"
   perl -i -pe "s|targetRevision: .*|targetRevision: ${BRANCH}|" "${file}"
@@ -137,11 +134,8 @@ log "Committing GitOps changes"
 git add \
   helm-charts/banking-service/values-*.yaml \
   helm-charts/springbootapp-frontend/values.yaml \
-  argocd/root-application.yaml \
-  argocd/apps/backend-shared.yaml \
-  argocd/apps/backend-services.yaml \
-  argocd/apps/frontend.yaml \
-  argocd/apps/monitoring.yaml
+  argocd \
+  gitops/db
 
 if git diff --cached --quiet; then
   log "No git changes to commit"

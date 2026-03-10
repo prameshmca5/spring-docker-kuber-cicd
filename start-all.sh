@@ -46,6 +46,7 @@ echo -e "${BLUE}Step 4: Cleaning up previous port-forwards...${NC}"
 sudo pkill -f "kubectl port-forward.*80:80" 2>/dev/null || true
 pkill -f "kubectl port-forward.*8888:80" 2>/dev/null || true
 pkill -f "kubectl port-forward.*8761:8761" 2>/dev/null || true
+pkill -f "kubectl port-forward.*8095:443" 2>/dev/null || true
 sleep 1
 
 # 5. Detect Local IP for Whitelisting
@@ -84,7 +85,21 @@ else
     echo -e "${YELLOW}Warning: discovery-server service not found in namespace 'backend'. Skipping local view setup.${NC}"
 fi
 
-# 9. Verify and Final Check
+# 9. Start ArgoCD Port-Forward on Port 8095
+echo -e "${BLUE}Step 9: Starting ArgoCD Port-Forward on 8095...${NC}"
+if kubectl get svc -n argocd argocd-server >/dev/null 2>&1; then
+    nohup kubectl port-forward --namespace=argocd service/argocd-server 8095:80 --address=127.0.0.1 > /tmp/k8s-portforward-8095.log 2>&1 &
+    sleep 2
+    if lsof -nP -iTCP:8095 -sTCP:LISTEN 2>/dev/null | grep -q "kubectl"; then
+        echo -e "${GREEN}ArgoCD port-forward active on 127.0.0.1:8095${NC}"
+    else
+        echo -e "${YELLOW}Warning: ArgoCD port-forward may not have started. Check /tmp/k8s-portforward-8095.log${NC}"
+    fi
+else
+    echo -e "${YELLOW}Warning: argocd-server service not found in namespace 'argocd'. Skipping ArgoCD setup.${NC}"
+fi
+
+# 10. Verify and Final Check
 if lsof -nP -iTCP:80 -sTCP:LISTEN 2>/dev/null | grep -q "kubectl\|sudo"; then
     echo -e "${SUCCESS}================================================${NC}"
     echo -e "${GREEN}🚀 ALL SERVICES ARE READY ON PORT 80!${NC}"
@@ -99,12 +114,18 @@ if lsof -nP -iTCP:80 -sTCP:LISTEN 2>/dev/null | grep -q "kubectl\|sudo"; then
     echo -e "👉 ${GREEN}http://prometheus.local${NC}"
     echo -e "👉 ${GREEN}http://kafka-ui.local${NC}"
     echo ""
+    echo -e "${HEADER}ArgoCD Access:${NC}"
+    echo -e "👉 ${GREEN}http://localhost:8095${NC}              (ArgoCD UI)"
+    echo -e "Username: admin"
+    echo -e "Password: $(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d 2>/dev/null || echo 'not available')"
+    echo ""
     echo -e "${HEADER}Database Access (Whitelisted to ${LOCAL_IP}):${NC}"
     echo -e "Postgres: ${GREEN}springbootapp-db-postgres.db.svc.cluster.local:5432${NC}"
     echo -e "MySQL:    ${GREEN}mysql.db.svc.cluster.local:3306${NC}"
     echo ""
     echo -e "${YELLOW}Note: If pages don't load, check /tmp/k8s-portforward-80.log${NC}"
     echo -e "${YELLOW}Note: If Eureka local view doesn't load, check /tmp/k8s-portforward-8761.log${NC}"
+    echo -e "${YELLOW}Note: If ArgoCD doesn't load, check /tmp/k8s-portforward-8095.log${NC}"
     echo -e "${YELLOW}Note: Ensure the following are in your /etc/hosts file:${NC}"
     echo -e "      127.0.0.1 kafka-ui.local mysql.db postgres.db"
 else

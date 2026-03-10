@@ -1,24 +1,31 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: backend-shared
+  name: postgres-customer
   namespace: argocd
   labels:
     app.kubernetes.io/part-of: banking-platform
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "1"
 spec:
-  project: backend
+  project: db
   source:
     repoURL: https://github.com/prameshmca5/spring-docker-kuber-cicd.git
     targetRevision: cicd-docker-k8s-helm-argocd
-    path: gitops/backend-shared
+    path: helm-charts/dedicated-db
+    helm:
+      releaseName: postgres-customer
+      parameters:
+        - name: type
+          value: postgres
+        - name: name
+          value: postgres-customer
+        - name: postgres.database
+          value: customer_db
   destination:
     server: https://kubernetes.default.svc
-    namespace: backend
+    namespace: db
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
