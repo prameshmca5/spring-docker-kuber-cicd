@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: db
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  description: Database and messaging applications for the banking platform
+  sourceRepos:
+    - https://github.com/prameshmca5/spring-docker-kuber-cicd.git
+  destinations:
+    - namespace: db
+      server: https://kubernetes.default.svc
+    - namespace: external-tools
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'

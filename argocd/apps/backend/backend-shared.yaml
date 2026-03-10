@@ -1,17 +1,21 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: banking-platform
+  name: backend-shared
   namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: banking-platform
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
 spec:
-  project: default
+  project: backend
   source:
     repoURL: https://github.com/prameshmca5/spring-docker-kuber-cicd.git
     targetRevision: cicd-docker-k8s-helm-argocd
-    path: argocd/bootstrap
+    path: gitops/backend-shared
   destination:
     server: https://kubernetes.default.svc
-    namespace: argocd
+    namespace: backend
   syncPolicy:
     automated:
       prune: true
