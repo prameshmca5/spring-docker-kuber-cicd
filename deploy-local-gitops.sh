@@ -130,6 +130,7 @@ ARGOCD_FILES=(
 )
 for file in "${ARGOCD_FILES[@]}"; do
   perl -i -pe "s|repoURL: .*|repoURL: ${REPO_URL}|" "${file}"
+  perl -i -pe "s|targetRevision: .*|targetRevision: ${BRANCH}|" "${file}"
 done
 
 log "Committing GitOps changes"

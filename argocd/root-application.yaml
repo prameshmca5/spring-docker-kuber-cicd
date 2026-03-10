@@ -7,7 +7,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/prameshmca5/spring-docker-kuber-cicd.git
-    targetRevision: HEAD
+    targetRevision: cicd-docker-k8s-helm-argocd
     path: argocd/apps
     directory:
       recurse: true
