@@ -6,6 +6,43 @@ MINIKUBE_CONTAINER="minikube"
 
 IMAGE_TAG=${1:-"latest"}
 
+resolve_docker_host() {
+  local configured_socket=""
+
+  if [[ "${DOCKER_HOST:-}" == unix://* ]]; then
+    configured_socket="${DOCKER_HOST#unix://}"
+    if [ -S "$configured_socket" ]; then
+      return
+    fi
+  fi
+
+  for socket in "/var/run/docker.sock" "${HOME}/.docker/run/docker.sock"; do
+    if [ -S "$socket" ]; then
+      export DOCKER_HOST="unix://$socket"
+      echo "Using Docker socket: $socket"
+      return
+    fi
+  done
+
+  unset DOCKER_HOST
+}
+
+verify_docker() {
+  if ! command -v "$DOCKER" >/dev/null 2>&1; then
+    echo "Docker CLI not found on PATH."
+    exit 1
+  fi
+
+  resolve_docker_host
+
+  if ! "$DOCKER" version >/dev/null 2>&1; then
+    echo "Docker daemon is not reachable."
+    echo "Current DOCKER_HOST: ${DOCKER_HOST:-unset}"
+    echo "Start Docker Desktop or fix the Docker socket for Jenkins."
+    exit 1
+  fi
+}
+
 # All microservice image names (bash 3 compatible)
 IMAGES=(
   "springbootapps-discovery-server:${IMAGE_TAG}"
@@ -25,6 +62,8 @@ echo "=============================================="
 echo "   Loading Docker Images into Minikube"
 echo "   docker save | docker exec | docker load"
 echo "=============================================="
+
+verify_docker
 
 for IMAGE in "${IMAGES[@]}"; do
   echo ""
@@ -76,4 +115,3 @@ echo ""
 echo "=============================================="
 echo "   External images loaded! ✔"
 echo "=============================================="
-

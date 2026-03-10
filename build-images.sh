@@ -11,6 +11,43 @@ if [ -z "$MINIKUBE" ]; then MINIKUBE="minikube"; fi
 
 IMAGE_TAG=${1:-"latest"}
 
+resolve_docker_host() {
+  local configured_socket=""
+
+  if [[ "${DOCKER_HOST:-}" == unix://* ]]; then
+    configured_socket="${DOCKER_HOST#unix://}"
+    if [ -S "$configured_socket" ]; then
+      return
+    fi
+  fi
+
+  for socket in "/var/run/docker.sock" "${HOME}/.docker/run/docker.sock"; do
+    if [ -S "$socket" ]; then
+      export DOCKER_HOST="unix://$socket"
+      echo "Using Docker socket: $socket"
+      return
+    fi
+  done
+
+  unset DOCKER_HOST
+}
+
+verify_docker() {
+  if ! command -v "$DOCKER" >/dev/null 2>&1; then
+    echo "Docker CLI not found on PATH."
+    exit 1
+  fi
+
+  resolve_docker_host
+
+  if ! "$DOCKER" version >/dev/null 2>&1; then
+    echo "Docker daemon is not reachable."
+    echo "Current DOCKER_HOST: ${DOCKER_HOST:-unset}"
+    echo "Start Docker Desktop or fix the Docker socket for Jenkins."
+    exit 1
+  fi
+}
+
 # All microservice modules → image name (bash 3 compatible)
 SERVICES=(
   "discovery-server:springbootapps-discovery-server"
@@ -29,6 +66,8 @@ echo "=============================================="
 echo "   Building and Loading All Docker Images"
 echo "   Docker Desktop → Minikube"
 echo "=============================================="
+
+verify_docker
 
 for ENTRY in "${SERVICES[@]}"; do
   MODULE="${ENTRY%%:*}"
