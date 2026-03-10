@@ -1,14 +1,16 @@
-name: Docker Hub GitOps Pipeline
+  name: Docker Hub GitOps Pipeline
 
 on:
   push:
     branches:
       - main
       - develop
+      - develop-github-cicd
   pull_request:
     branches:
       - main
       - develop
+      - develop-github-cicd
   workflow_dispatch:
 
 permissions:
