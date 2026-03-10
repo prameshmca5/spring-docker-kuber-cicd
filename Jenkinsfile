@@ -1,68 +1,83 @@
 pipeline {
     agent any
 
-    environment {
-        KUBECONFIG = "${WORKSPACE}/minikube-kubeconfig"
-        DOCKER_HOST = "unix:///var/run/docker.sock"
-        PROJECT_DIR = "${WORKSPACE}"
-        PATH = "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:${env.PATH}"
-        IMAGE_REGISTRY = "localhost:5000"
-        BUILD_TIMESTAMP = sh(script: 'date +%Y%m%d%H%M%S', returnStdout: true).trim()
-        GIT_COMMIT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-        GIT_BRANCH = sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
-        POM_VERSION = sh(script: 'chmod +x mvnw && ./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout || echo ""', returnStdout: true).trim()
-        IMAGE_VERSION = "latest"
-    }
-
     options {
-        buildDiscarder(logRotator(numToKeepStr: '10', artifactNumToKeepStr: '5'))
-        timeout(time: 30, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '15', artifactNumToKeepStr: '10'))
+        timeout(time: 45, unit: 'MINUTES')
         disableConcurrentBuilds()
         timestamps()
     }
 
     parameters {
-        booleanParam(name: 'SKIP_TESTS', defaultValue: true, description: 'Skip running tests')
-        booleanParam(name: 'CLEAN_BUILD', defaultValue: true, description: 'Perform clean build')
-        booleanParam(name: 'BUILD_IMAGES', defaultValue: false, description: 'Build and load new Docker Images')
-        booleanParam(name: 'DEPLOY_BACKEND', defaultValue: true, description: 'Deploy Backend via Helm')
-        booleanParam(name: 'DEPLOY_FRONTEND', defaultValue: true, description: 'Deploy Frontend via Helm')
-        booleanParam(name: 'DEPLOY_DATABASE', defaultValue: false, description: 'Deploy Database Infrastructure')
-        booleanParam(name: 'DEPLOY_MONITORING', defaultValue: false, description: 'Deploy Monitoring Stack (Loki + Promtail + Grafana)')
-        choice(name: 'DEPLOY_ENVIRONMENT', choices: ['dev', 'staging', 'prod'], description: 'Deployment environment')
-        choice(name: 'BACKEND_SERVICE', choices: ['ALL', 'discovery-server', 'api-gateway', 'account-service', 'customer-service', 'transaction-service', 'notification-service', 'payment-service', 'employee-service', 'common-service', 'auth-service'], description: 'Select a specific backend service to deploy, or ALL for everything')
+        booleanParam(name: 'SKIP_TESTS', defaultValue: true, description: 'Skip Maven tests')
+        booleanParam(name: 'BUILD_ARTIFACTS', defaultValue: false, description: 'Build Maven artifacts before image/deploy stages')
+        booleanParam(name: 'CLEAN_EXISTING_IMAGES', defaultValue: true, description: 'Delete existing project Docker images before build/load')
+        booleanParam(name: 'BUILD_IMAGES', defaultValue: false, description: 'Build Docker images')
+        booleanParam(name: 'LOAD_IMAGES_TO_MINIKUBE', defaultValue: false, description: 'Force-load Docker images into Minikube')
+
+        booleanParam(name: 'DEPLOY_DATABASE', defaultValue: false, description: 'Deploy DB stack')
+        booleanParam(name: 'DEPLOY_BACKEND', defaultValue: true, description: 'Deploy backend services')
+        booleanParam(name: 'DEPLOY_FRONTEND', defaultValue: false, description: 'Deploy frontend service')
+        booleanParam(name: 'DEPLOY_MONITORING', defaultValue: false, description: 'Deploy monitoring stack')
+
+        choice(name: 'BACKEND_SERVICE', choices: [
+            'ALL',
+            'discovery-server',
+            'api-gateway',
+            'account-service',
+            'customer-service',
+            'transaction-service',
+            'notification-service',
+            'payment-service',
+            'employee-service',
+            'common-service',
+            'auth-service'
+        ], description: 'Backend service to deploy, or ALL')
+
+        string(name: 'IMAGE_TAG', defaultValue: 'latest', trim: true, description: 'Docker image tag')
+        choice(name: 'DEPLOY_ENVIRONMENT', choices: ['dev', 'staging', 'prod'], description: 'Environment label for deployment metadata')
+    }
+
+    environment {
+        KUBECONFIG = "${WORKSPACE}/minikube-kubeconfig"
+        PATH = "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:${env.PATH}"
     }
 
     stages {
-        stage('Initialize') {
-            steps {
-                echo '🚀 Starting pipeline execution...'
-                echo "Build #${BUILD_NUMBER} - ${GIT_BRANCH}@${GIT_COMMIT}"
-                script {
-                    currentBuild.description = "Branch: ${GIT_BRANCH} | Commit: ${GIT_COMMIT}"
-                }
-            }
-        }
-
         stage('Checkout') {
             steps {
-                echo '📥 Checking out source code...'
                 checkout scm
-                sh 'git status'
                 sh 'git log -1 --oneline'
             }
         }
 
-        stage('Setup Environment') {
+        stage('Initialize') {
             steps {
-                echo '⚙️ Setting up environment...'
+                script {
+                    env.GIT_COMMIT_SHORT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    env.GIT_BRANCH_NAME = sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
+                    currentBuild.description = "${params.DEPLOY_ENVIRONMENT} | ${env.GIT_BRANCH_NAME}@${env.GIT_COMMIT_SHORT} | tag=${params.IMAGE_TAG}"
+                }
+                echo "Build #${BUILD_NUMBER}"
+                echo "Branch: ${env.GIT_BRANCH_NAME}"
+                echo "Commit: ${env.GIT_COMMIT_SHORT}"
+                echo "Environment: ${params.DEPLOY_ENVIRONMENT}"
+            }
+        }
+
+        stage('Setup Kubeconfig') {
+            when {
+                expression {
+                    return params.DEPLOY_DATABASE || params.DEPLOY_BACKEND || params.DEPLOY_FRONTEND || params.DEPLOY_MONITORING || params.LOAD_IMAGES_TO_MINIKUBE
+                }
+            }
+            steps {
                 sh '''
-                    # Force retrieval from system default config to avoid stale workspace file
                     MINIKUBE_SERVER=$(unset KUBECONFIG && kubectl config view -o jsonpath='{.clusters[?(@.name=="minikube")].cluster.server}')
-                    
+
                     if [ -z "$MINIKUBE_SERVER" ]; then
-                        echo "⚠️ Minikube server URL not found in config! Using default."
-                        MINIKUBE_SERVER="https://127.0.0.1:8443"
+                      echo "Minikube server URL not found, fallback to https://127.0.0.1:8443"
+                      MINIKUBE_SERVER="https://127.0.0.1:8443"
                     fi
 
                     cat > ${KUBECONFIG} << KUBEEOF
@@ -87,16 +102,15 @@ users:
     client-certificate: /Users/rohit/.minikube/profiles/minikube/client.crt
     client-key: /Users/rohit/.minikube/profiles/minikube/client.key
 KUBEEOF
-                    echo "✅ Kubeconfig written to ${KUBECONFIG} using server ${MINIKUBE_SERVER}"
+
+                    echo "Kubeconfig written: ${KUBECONFIG}"
                 '''
             }
         }
 
-        stage('Verify Tools') {
+        stage('Verify Tooling') {
             steps {
-                echo '🔍 Verifying required tools...'
                 sh '''
-                    echo "=== System Info ==="
                     java -version 2>&1 | head -n 1
                     docker --version
                     kubectl version --client
@@ -105,108 +119,109 @@ KUBEEOF
             }
         }
 
-        stage('Dependency Check') {
+        stage('Build Artifacts') {
             when {
-                expression { params.CLEAN_BUILD && params.BUILD_IMAGES }
+                expression { return params.BUILD_ARTIFACTS }
             }
             steps {
-                echo '📦 Cleaning and downloading dependencies...'
                 sh '''
                     chmod +x mvnw
-                    # Use parallel threads (-T 1C) to speed up dependency resolution across modules
-                    ./mvnw clean dependency:resolve \
-                        -T 1C \
-                        -DskipTests=${SKIP_TESTS} \
-                        --batch-mode \
-                        --no-transfer-progress
-                '''
-            }
-        }
-
-        stage('Build & Test') {
-            when {
-                expression { params.BUILD_IMAGES }
-            }
-            steps {
-                echo '🔨 Building and testing...'
-                sh '''
-                    chmod +x mvnw
-                    # Use parallel threads to speed up the compilation of multiple modules
-                    ./mvnw package \
-                        -T 1C \
-                        -DskipTests=${SKIP_TESTS} \
-                        --batch-mode \
-                        --no-transfer-progress
+                    MVN_ARGS="clean package --batch-mode --no-transfer-progress"
+                    if [ "${SKIP_TESTS}" = "true" ]; then
+                      MVN_ARGS="$MVN_ARGS -DskipTests"
+                    fi
+                    ./mvnw $MVN_ARGS
                 '''
             }
             post {
                 success {
-                    echo '✅ Build completed successfully.'
                     archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true
                 }
             }
         }
 
-        stage('Build Docker Images') {
+        stage('Clean Existing Images') {
             when {
-                expression { params.BUILD_IMAGES }
+                expression { return params.CLEAN_EXISTING_IMAGES && (params.BUILD_IMAGES || params.LOAD_IMAGES_TO_MINIKUBE) }
             }
             steps {
-                echo '🐳 Building Docker images...'
-                script {
-                    sh """
-                        echo "Building images with version: ${env.IMAGE_VERSION}"
-                        chmod +x build-images.sh
-                        ./build-images.sh ${env.IMAGE_VERSION}
-                    """
-                }
+                sh '''
+                    IMAGE_LIST="
+                    springbootapps-discovery-server:${IMAGE_TAG}
+                    springbootapps-api-gateway:${IMAGE_TAG}
+                    springbootapps-account-service:${IMAGE_TAG}
+                    springbootapps-customer-service:${IMAGE_TAG}
+                    springbootapps-transaction-service:${IMAGE_TAG}
+                    springbootapps-notification-service:${IMAGE_TAG}
+                    springbootapps-payment-service:${IMAGE_TAG}
+                    springbootapps-common-service:${IMAGE_TAG}
+                    springbootapps-employee-service:${IMAGE_TAG}
+                    springbootapps-auth-service:${IMAGE_TAG}
+                    springbootapps-react-frontend:${IMAGE_TAG}
+                    "
+
+                    for IMAGE in $IMAGE_LIST; do
+                      if command -v docker >/dev/null 2>&1; then
+                        docker image rm -f "$IMAGE" >/dev/null 2>&1 || true
+                      fi
+
+                      if command -v minikube >/dev/null 2>&1; then
+                        minikube image rm "$IMAGE" >/dev/null 2>&1 || true
+                      fi
+                    done
+                '''
             }
-            post {
-                success {
-                    echo '✅ Docker images built successfully.'
-                    sh 'docker images | grep -E "microservice" || true'
-                }
+        }
+
+        stage('Build Docker Images') {
+            when {
+                expression { return params.BUILD_IMAGES }
+            }
+            steps {
+                sh '''
+                    chmod +x build-images.sh
+                    ./build-images.sh "${IMAGE_TAG}"
+                '''
             }
         }
 
         stage('Load Images to Minikube') {
             when {
-                expression { params.BUILD_IMAGES }
+                expression { return params.LOAD_IMAGES_TO_MINIKUBE }
             }
             steps {
-                echo '📦 Loading Docker images into Minikube...'
                 sh '''
                     chmod +x load-images.sh
-                    ./load-images.sh ${IMAGE_VERSION}
+                    ./load-images.sh "${IMAGE_TAG}"
                 '''
             }
         }
 
-        stage('Pre-Deployment Checks') {
+        stage('Pre-Deploy Validation') {
+            when {
+                expression {
+                    return params.DEPLOY_DATABASE || params.DEPLOY_BACKEND || params.DEPLOY_FRONTEND || params.DEPLOY_MONITORING
+                }
+            }
             steps {
-                echo '🔍 Running pre-deployment validation...'
                 sh '''
                     kubectl cluster-info
                     kubectl get nodes
 
-                    echo "=== Checking ingress-nginx webhook ==="
-                    if ! kubectl get svc ingress-nginx-controller-admission -n ingress-nginx > /dev/null 2>&1; then
-                        echo "❌ ingress-nginx admission webhook service not found!"
-                        echo "   Run: minikube addons enable ingress"
-                        echo "   And delete stale webhook: kubectl delete validatingwebhookconfiguration ingress-nginx-admission"
-                        exit 1
-                    fi
-                    echo "✅ ingress-nginx admission webhook is healthy."
+                    kubectl create namespace backend --dry-run=client -o yaml | kubectl apply -f -
+                    kubectl create namespace frontend --dry-run=client -o yaml | kubectl apply -f -
+                    kubectl create namespace db --dry-run=client -o yaml | kubectl apply -f -
+                    kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+                    kubectl create namespace external-tools --dry-run=client -o yaml | kubectl apply -f -
                 '''
             }
         }
 
         stage('Deploy Database') {
             when {
-                expression { params.DEPLOY_DATABASE }
+                expression { return params.DEPLOY_DATABASE }
             }
             steps {
-                echo '🚀 Deploying Database Infrastructure...'
                 sh '''
                     chmod +x install-db.sh
                     ./install-db.sh
@@ -214,60 +229,67 @@ KUBEEOF
             }
         }
 
-        stage('Deploy Backend via Helm') {
+        stage('Deploy Backend') {
             when {
-                expression { params.DEPLOY_BACKEND }
+                expression { return params.DEPLOY_BACKEND }
             }
             steps {
-                echo '🚀 Deploying to Kubernetes via Helm...'
-                sh """
-                    kubectl create namespace backend --dry-run=client -o yaml | kubectl apply -f -
+                sh '''
                     chmod +x deploy-all.sh
-                    ./deploy-all.sh --namespace backend --service "${params.BACKEND_SERVICE}"
-                """
+                    ./deploy-all.sh --namespace backend --service "${BACKEND_SERVICE}"
+                '''
             }
         }
 
-        stage('Deploy Monitoring Stack') {
+        stage('Deploy Frontend') {
             when {
-                expression { params.DEPLOY_MONITORING }
+                expression { return params.DEPLOY_FRONTEND }
             }
             steps {
-                echo '📊 Deploying Monitoring Stack (Loki + Promtail + Grafana)...'
+                sh '''
+                    helm upgrade --install springbootapp-frontend ./helm-charts/springbootapp-frontend \
+                        --namespace frontend \
+                        --create-namespace \
+                        --set image.tag="${IMAGE_TAG}"
+                '''
+            }
+        }
+
+        stage('Deploy Monitoring') {
+            when {
+                expression { return params.DEPLOY_MONITORING }
+            }
+            steps {
                 sh '''
                     chmod +x install-monitoring.sh
                     ./install-monitoring.sh
                 '''
             }
-            post {
-                success {
-                    echo '✅ Monitoring stack deployed. Grafana available at http://$(minikube ip):32000 (admin/admin)'
+        }
+
+        stage('Verify Deployments') {
+            when {
+                expression {
+                    return params.DEPLOY_DATABASE || params.DEPLOY_BACKEND || params.DEPLOY_FRONTEND || params.DEPLOY_MONITORING
                 }
             }
-        }
-
-        stage('Deploy Frontend via Helm') {
-            when {
-                expression { params.DEPLOY_FRONTEND }
-            }
             steps {
-                echo '🚀 Deploying Frontend to Kubernetes via Helm...'
                 sh '''
-                    helm upgrade --install springbootapp-frontend ./helm-charts/springbootapp-frontend --namespace frontend --create-namespace \
-                        --set image.tag="${IMAGE_VERSION:-latest}"
-                '''
-            }
-        }
+                    echo "=== backend ==="
+                    kubectl get pods -n backend || true
+                    echo "=== frontend ==="
+                    kubectl get pods -n frontend || true
+                    echo "=== db ==="
+                    kubectl get pods -n db || true
+                    echo "=== monitoring ==="
+                    kubectl get pods -n monitoring || true
 
-        stage('Verify Deployment') {
-            steps {
-                echo '🔎 Verifying deployment health...'
-                sh '''
-                    echo "=== Pods in backend namespace ==="
-                    kubectl get pods -n backend
-                    
-                    echo "=== Waiting for pods to be ready ==="
-                    kubectl wait --for=condition=ready pod --all -n backend --timeout=120s || echo "Some pods may not be ready"
+                    if [ "${DEPLOY_BACKEND}" = "true" ]; then
+                      kubectl wait --for=condition=ready pod --all -n backend --timeout=180s || true
+                    fi
+                    if [ "${DEPLOY_FRONTEND}" = "true" ]; then
+                      kubectl wait --for=condition=ready pod --all -n frontend --timeout=180s || true
+                    fi
                 '''
             }
         }
@@ -275,30 +297,13 @@ KUBEEOF
 
     post {
         always {
-            echo '🏁 Pipeline execution completed.'
-            sh '''
-                echo "=== Final Status ==="
-                kubectl get pods -n backend || true
-            '''
+            echo 'Pipeline completed.'
         }
         success {
-            echo '''
-            ╔══════════════════════════════════════════╗
-            ║   ✅ DEPLOYMENT SUCCESSFUL               ║
-            ║   kubectl get pods -n backend            ║
-            ╚══════════════════════════════════════════╝
-            '''
+            echo 'Deployment pipeline succeeded.'
         }
         failure {
-            echo '''
-            ╔══════════════════════════════════════════╗
-            ║   ❌ DEPLOYMENT FAILED                   ║
-            ║   Review logs and troubleshoot           ║
-            ╚══════════════════════════════════════════╝
-            '''
-        }
-        unstable {
-            echo '⚠️ Pipeline is unstable. Some checks may have failed.'
+            echo 'Deployment pipeline failed. Review stage logs.'
         }
     }
 }

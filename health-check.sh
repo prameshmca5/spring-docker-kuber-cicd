@@ -149,9 +149,16 @@ check_actuator_health() {
         ["payment-service"]="backend"
         ["auth-service"]="backend"
     )
+    declare -A SERVICE_PORTS=(
+        ["api-gateway"]="8080"
+        ["discovery-server"]="8761"
+        ["payment-service"]="8080"
+        ["auth-service"]="8080"
+    )
 
     for SVC in "${!SERVICES[@]}"; do
         NS="${SERVICES[$SVC]}"
+        PORT="${SERVICE_PORTS[$SVC]:-8080}"
         if ! kubectl get svc "$SVC" -n "$NS" &>/dev/null; then
             warning "Service $SVC not found in namespace $NS"
             continue
@@ -168,14 +175,14 @@ check_actuator_health() {
 
         local health_status
         health_status=$(kubectl exec "$pod" -n "$NS" -- \
-            curl -sf "http://localhost:8080/actuator/health" 2>/dev/null \
+            curl -sf "http://localhost:${PORT}/actuator/health" 2>/dev/null \
             | grep -o '"status":"[^"]*"' | head -1 || echo '"status":"UNREACHABLE"')
 
         if echo "$health_status" | grep -q '"UP"'; then
-            success "$SVC actuator: UP"
+            success "$SVC actuator (port ${PORT}): UP"
         else
-            error "$SVC actuator: $health_status"
-            FAILED_PODS+=("$SVC actuator: $health_status")
+            error "$SVC actuator (port ${PORT}): $health_status"
+            FAILED_PODS+=("$SVC actuator (port ${PORT}): $health_status")
         fi
     done
 }

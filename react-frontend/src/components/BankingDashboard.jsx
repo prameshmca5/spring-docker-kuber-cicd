@@ -1,26 +1,60 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Landmark, User, Bell, LayoutDashboard, CreditCard, ArrowRightLeft, Settings, LogOut, AlertTriangle, MessageSquare, Wallet, Activity } from 'lucide-react';
+import {
+    Activity,
+    BarChart3,
+    Bell,
+    Building2,
+    CreditCard,
+    LayoutDashboard,
+    LogOut,
+    NotebookText,
+    Menu,
+    Settings,
+    ShieldCheck,
+    User,
+    Users,
+    Wallet,
+    X,
+} from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import NotificationService from '../services/NotificationService';
+
+const MENU_ITEMS = [
+    { to: '/dashboard', label: 'Overview', icon: LayoutDashboard, end: true },
+    { to: '/dashboard/accounts/list', label: 'Accounts', icon: CreditCard },
+    { to: '/dashboard/transfers/list', label: 'Transfers', icon: Building2 },
+    { to: '/dashboard/payments', label: 'Payments', icon: Wallet },
+    { to: '/dashboard/employees', label: 'Employees', icon: Users },
+    { to: '/dashboard/notifications', label: 'Notifications', icon: Bell },
+    { to: '/dashboard/reports', label: 'Reports', icon: BarChart3 },
+    { to: '/dashboard/loans', label: 'Loans', icon: ShieldCheck },
+    { to: '/dashboard/audit', label: 'Audit', icon: NotebookText },
+    { to: '/dashboard/kafka-sample', label: 'Events', icon: Activity },
+    { to: '/dashboard/settings', label: 'Settings', icon: Settings },
+];
 
 const BankingDashboard = () => {
     const { user, logout } = useContext(AuthContext);
     const navigate = useNavigate();
-    const [showDropdown, setShowDropdown] = useState(false);
-    const [showLogoutModal, setShowLogoutModal] = useState(false);
+
     const [notifications, setNotifications] = useState([]);
-    const [showNotifications, setShowNotifications] = useState(false);
+    const [showUserMenu, setShowUserMenu] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     useEffect(() => {
         const fetchNotifications = async () => {
-            if (user?.userId) {
-                try {
-                    const response = await NotificationService.getNotifications(user.userId);
-                    setNotifications(response.data);
-                } catch (error) {
-                    console.error("Failed to fetch notifications:", error);
-                }
+            const currentUserId = user?.id || user?.userId;
+            if (!currentUserId) {
+                setNotifications([]);
+                return;
+            }
+
+            try {
+                const response = await NotificationService.getNotifications(currentUserId);
+                setNotifications(response.data || []);
+            } catch {
+                setNotifications([]);
             }
         };
 
@@ -29,223 +63,98 @@ const BankingDashboard = () => {
         return () => clearInterval(intervalId);
     }, [user]);
 
-    const confirmLogout = () => {
+    const unreadCount = useMemo(() => notifications.length, [notifications]);
+
+    const handleSignOut = () => {
         logout();
         navigate('/login');
     };
 
+    const closeMenus = () => {
+        setShowUserMenu(false);
+        setMobileMenuOpen(false);
+    };
+
     return (
-        <div className="container-fluid bg-light min-vh-100 d-flex flex-column p-0">
-            {/* Top Navigation Bar */}
-            <nav className="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm py-3 px-4">
-                <div className="container-fluid">
+        <div className="dashboard-shell">
+            <div className={`dashboard-backdrop ${mobileMenuOpen ? 'show' : ''}`} onClick={() => setMobileMenuOpen(false)} />
 
-                    {/* Brand Logo & Name */}
-                    <Link className="navbar-brand d-flex align-items-center fw-bold fs-4" to="/">
-                        <div className="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center me-3 shadow-sm" style={{ width: '45px', height: '45px' }}>
-                            <Landmark size={26} strokeWidth={2.5} />
-                        </div>
-                        Cloud Banking Platform
-                    </Link>
+            <aside className={`dashboard-sidebar ${mobileMenuOpen ? 'show' : ''}`}>
+                <Link className="dashboard-brand" to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                    <span className="brand-mark">CB</span>
+                    <span className="brand-text">Cloud Banking</span>
+                </Link>
 
-                    {/* Mobile Toggle Button */}
-                    <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
-                        <span className="navbar-toggler-icon"></span>
+                <nav className="dashboard-nav">
+                    {MENU_ITEMS.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                            <NavLink
+                                key={item.to}
+                                to={item.to}
+                                end={item.end}
+                                className={({ isActive }) => `menu-link ${isActive ? 'active' : ''}`}
+                                onClick={closeMenus}
+                            >
+                                <Icon size={18} />
+                                <span>{item.label}</span>
+                                {item.label === 'Notifications' && unreadCount > 0 && (
+                                    <span className="menu-badge">{unreadCount}</span>
+                                )}
+                            </NavLink>
+                        );
+                    })}
+                </nav>
+            </aside>
+
+            <div className="dashboard-main">
+                <header className="dashboard-topbar">
+                    <button
+                        type="button"
+                        className="icon-btn d-lg-none"
+                        onClick={() => setMobileMenuOpen((prev) => !prev)}
+                        aria-label="Toggle navigation"
+                    >
+                        {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
                     </button>
 
-                    {/* Navigation Links */}
-                    <div className="collapse navbar-collapse" id="navbarText">
-                        <ul className="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4 fs-6 fw-medium">
-                            <li className="nav-item me-3">
-                                <NavLink className={({ isActive }) => `nav-link d-flex align-items-center ${isActive ? 'active fw-bold' : 'text-white-50 hover-opacity'}`} to="/dashboard" end>
-                                    <LayoutDashboard size={18} className="me-2" /> Dashboard
-                                </NavLink>
-                            </li>
-                            <li className="nav-item me-3 dropdown position-relative"
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.classList.add('show');
-                                    e.currentTarget.querySelector('.dropdown-menu').classList.add('show');
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.classList.remove('show');
-                                    e.currentTarget.querySelector('.dropdown-menu').classList.remove('show');
-                                }}
-                            >
-                                <a className="nav-link dropdown-toggle d-flex align-items-center text-white-50 hover-opacity cursor-pointer" id="accountsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <CreditCard size={18} className="me-2" /> Accounts & Cards
-                                </a>
-                                <ul className="dropdown-menu shadow border-0 mt-0" aria-labelledby="accountsDropdown">
-                                    <li><NavLink className="dropdown-item py-2" to="/dashboard/accounts/list">View All Accounts</NavLink></li>
-                                    <li><NavLink className="dropdown-item py-2" to="/dashboard/accounts/create">Open New Account</NavLink></li>
-                                    <li><hr className="dropdown-divider" /></li>
-                                    <li><NavLink className="dropdown-item py-2 text-muted" to="/dashboard/accounts">Legacy View</NavLink></li>
-                                </ul>
-                            </li>
-                            <li className="nav-item me-3 dropdown position-relative"
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.classList.add('show');
-                                    e.currentTarget.querySelector('.dropdown-menu').classList.add('show');
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.classList.remove('show');
-                                    e.currentTarget.querySelector('.dropdown-menu').classList.remove('show');
-                                }}
-                            >
-                                <a className="nav-link dropdown-toggle d-flex align-items-center text-white-50 hover-opacity cursor-pointer" id="transfersDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <ArrowRightLeft size={18} className="me-2" /> Transfers
-                                </a>
-                                <ul className="dropdown-menu shadow border-0 mt-0" aria-labelledby="transfersDropdown">
-                                    <li><NavLink className="dropdown-item py-2" to="/dashboard/transfers/list">Transfer History</NavLink></li>
-                                    <li><NavLink className="dropdown-item py-2" to="/dashboard/transfers/create">Make a Transfer</NavLink></li>
-                                    <li><hr className="dropdown-divider" /></li>
-                                    <li><NavLink className="dropdown-item py-2 text-muted" to="/dashboard/transfers">Legacy View</NavLink></li>
-                                </ul>
-                            </li>
-                            <li className="nav-item me-3">
-                                <NavLink className={({ isActive }) => `nav-link d-flex align-items-center ${isActive ? 'active fw-bold' : 'text-white-50 hover-opacity'}`} to="/dashboard/payments">
-                                    <Wallet size={18} className="me-2" /> Payments
-                                </NavLink>
-                            </li>
-                            <li className="nav-item me-3">
-                                <NavLink className={({ isActive }) => `nav-link d-flex align-items-center ${isActive ? 'active fw-bold' : 'text-white-50 hover-opacity'}`} to="/dashboard/kafka-sample">
-                                    <Activity size={18} className="me-2" /> Kafka Sample
-                                </NavLink>
-                            </li>
-                            <li className="nav-item me-3">
-                                <NavLink className={({ isActive }) => `nav-link d-flex align-items-center ${isActive ? 'active fw-bold' : 'text-white-50 hover-opacity'}`} to="/dashboard/employees">
-                                    <User size={18} className="me-2" /> Employees
-                                </NavLink>
-                            </li>
-                            <li className="nav-item me-3">
-                                <NavLink className={({ isActive }) => `nav-link d-flex align-items-center ${isActive ? 'active fw-bold' : 'text-white-50 hover-opacity'}`} to="/dashboard/notifications">
-                                    <Bell size={18} className="me-2" /> Notifications
-                                </NavLink>
-                            </li>
-                            <li className="nav-item me-3">
-                                <NavLink className={({ isActive }) => `nav-link d-flex align-items-center ${isActive ? 'active fw-bold' : 'text-white-50 hover-opacity'}`} to="/dashboard/reports">
-                                    <LayoutDashboard size={18} className="me-2" /> Reports
-                                </NavLink>
-                            </li>
-                            <li className="nav-item">
-                                <NavLink className={({ isActive }) => `nav-link d-flex align-items-center ${isActive ? 'active fw-bold' : 'text-white-50 hover-opacity'}`} to="/dashboard/settings">
-                                    <Settings size={18} className="me-2" /> Settings
-                                </NavLink>
-                            </li>
-                        </ul>
+                    <div className="topbar-title">
+                        <h1>Professional Banking Workspace</h1>
+                        <p>Manage accounts, payments, reports, and platform operations</p>
+                    </div>
 
-                        {/* Right-aligned Profile & Notifications */}
-                        <div className="d-flex align-items-center text-white position-relative">
+                    <div className="topbar-actions">
+                        <NavLink to="/dashboard/notifications" className="icon-btn" aria-label="Notifications">
+                            <Bell size={18} />
+                            {unreadCount > 0 && <span className="top-badge">{unreadCount}</span>}
+                        </NavLink>
 
-                            {/* Notification Bell */}
-                            <div className="position-relative me-4">
-                                <button
-                                    className="btn btn-link text-white p-0 position-relative"
-                                    onClick={() => { setShowNotifications(!showNotifications); setShowDropdown(false); }}
-                                >
-                                    <Bell size={22} />
-                                    {notifications.length > 0 && (
-                                        <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '0.65rem' }}>
-                                            {notifications.length}
-                                            <span className="visually-hidden">unread messages</span>
-                                        </span>
-                                    )}
-                                </button>
+                        <div className="user-menu-wrap">
+                            <button type="button" className="user-pill" onClick={() => setShowUserMenu((prev) => !prev)}>
+                                <span className="avatar-pill">{user?.username?.charAt(0)?.toUpperCase() || <User size={16} />}</span>
+                                <span className="d-none d-md-inline">{user?.username || 'Bank User'}</span>
+                            </button>
 
-                                {/* Notification Dropdown */}
-                                {showNotifications && (
-                                    <div className="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-3 show p-0" style={{ position: 'absolute', top: '100%', right: '0', width: '340px', maxHeight: '420px', overflowY: 'auto' }}>
-                                        <div className="bg-light p-3 border-bottom d-flex justify-content-between align-items-center rounded-top">
-                                            <h6 className="mb-0 fw-bold">Notifications</h6>
-                                            <span className="badge bg-primary rounded-pill">{notifications.length} New</span>
-                                        </div>
-                                        <div className="list-group list-group-flush">
-                                            {notifications.length === 0 ? (
-                                                <div className="p-4 text-center text-muted">
-                                                    <MessageSquare size={24} className="mb-2 opacity-50" />
-                                                    <p className="mb-0 small">No new notifications</p>
-                                                </div>
-                                            ) : (
-                                                notifications.map((notif, idx) => (
-                                                    <div key={idx} className="list-group-item list-group-item-action py-3 px-3 border-bottom">
-                                                        <div className="d-flex align-items-start">
-                                                            <div className="bg-primary bg-opacity-10 text-primary p-2 rounded-circle me-3 mt-1">
-                                                                <Bell size={16} />
-                                                            </div>
-                                                            <div>
-                                                                {notif.title && <p className="mb-0 fw-semibold small">{notif.title}</p>}
-                                                                <p className="mb-1 text-dark" style={{ fontSize: '0.85rem' }}>{notif.message}</p>
-                                                                <small className="text-muted" style={{ fontSize: '0.73rem' }}>
-                                                                    {new Date(notif.timestamp).toLocaleString()}
-                                                                </small>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* User Profile */}
-                            <div
-                                className="d-flex align-items-center cursor-pointer"
-                                role="button"
-                                onClick={() => { setShowDropdown(!showDropdown); setShowNotifications(false); }}
-                            >
-                                <span className="me-2 fw-medium d-none d-md-block">{user?.username || 'Admin User'}</span>
-                                <div className="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" style={{ width: '40px', height: '40px' }}>
-                                    {user?.username?.charAt(0).toUpperCase() || <User size={20} />}
+                            {showUserMenu && (
+                                <div className="user-dropdown">
+                                    <NavLink to="/dashboard/settings" className="dropdown-link" onClick={closeMenus}>
+                                        <Settings size={16} />
+                                        <span>Settings</span>
+                                    </NavLink>
+                                    <button type="button" className="dropdown-link danger" onClick={handleSignOut}>
+                                        <LogOut size={16} />
+                                        <span>Sign out</span>
+                                    </button>
                                 </div>
-                            </div>
-
-                            {showDropdown && (
-                                <ul className="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2 show" style={{ position: 'absolute', top: '100%', right: '0' }}>
-                                    <li><NavLink className="dropdown-item py-2" to="/dashboard/settings" onClick={() => setShowDropdown(false)}><Settings size={16} className="me-2" /> Settings</NavLink></li>
-                                    <li><hr className="dropdown-divider my-1" /></li>
-                                    <li><button className="dropdown-item py-2 text-danger" onClick={() => { setShowDropdown(false); setShowLogoutModal(true); }}><LogOut size={16} className="me-2" /> Sign out</button></li>
-                                </ul>
                             )}
                         </div>
                     </div>
-                </div>
-            </nav>
+                </header>
 
-            {/* Main Content */}
-            <main className="container flex-grow-1 d-flex align-items-center justify-content-center py-5">
-                <div className="w-100 w-xl-85 w-xxl-75">
+                <main className="dashboard-content" onClick={() => setShowUserMenu(false)}>
                     <Outlet />
-                </div>
-            </main>
-
-            {/* Logout Confirmation Modal */}
-            {showLogoutModal && (
-                <div className="modal-backdrop fade show" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-                    <div className="modal d-block" tabIndex="-1" role="dialog">
-                        <div className="modal-dialog modal-dialog-centered" role="document">
-                            <div className="modal-content shadow-lg border-0 rounded-4">
-                                <div className="modal-body p-4 text-center">
-                                    <div className="mb-3 text-warning">
-                                        <AlertTriangle size={48} />
-                                    </div>
-                                    <h4 className="mb-3">Ready to Leave?</h4>
-                                    <p className="text-muted mb-4">
-                                        Are you sure you want to log out of your secure banking session?
-                                    </p>
-                                    <div className="d-flex justify-content-center gap-3">
-                                        <button type="button" className="btn btn-light px-4 py-2 fw-medium border" onClick={() => setShowLogoutModal(false)}>
-                                            Cancel
-                                        </button>
-                                        <button type="button" className="btn btn-danger px-4 py-2 fw-medium" onClick={confirmLogout}>
-                                            Yes, Log Out
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+                </main>
+            </div>
         </div>
     );
 };
