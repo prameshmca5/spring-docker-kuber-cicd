@@ -64,10 +64,30 @@ else
   echo -e "${RED}⚠️  Port-forward may not have started. Check: cat /tmp/k8s-portforward.log${NC}"
 fi
 
+echo ""
+echo -e "${BLUE}Step 5: Verifying Discovery Server view...${NC}"
+DISCOVERY_URL="http://qactsai.local:8888/discovery-server"
+DISCOVERY_READY=false
+
+for i in {1..12}; do
+    if curl -sSf "$DISCOVERY_URL" >/dev/null 2>&1; then
+        DISCOVERY_READY=true
+        break
+    fi
+    sleep 2
+done
+
+if [ "$DISCOVERY_READY" = true ]; then
+    echo -e "${GREEN}✅ Discovery Server view is reachable${NC}"
+else
+    echo -e "${YELLOW}⚠️  Discovery Server view not reachable yet. It may still be starting.${NC}"
+fi
+
 echo -e "${BLUE}==========================================${NC}"
 echo -e "${GREEN}SYSTEM IS READY!${NC}"
 echo -e "${BLUE}==========================================${NC}"
 echo -e "You can now access your services at:"
+echo -e "👉 ${GREEN}http://qactsai.local:8888/discovery-server${NC} (Discovery Server / Eureka)"
 echo -e "👉 ${GREEN}http://qactsai.local:8888/login${NC}           (Frontend)"
 echo -e "👉 ${GREEN}http://jaeger.local:8888${NC}                   (Jaeger Tracing)"
 echo -e "👉 ${GREEN}http://kibana.local:8888${NC}                   (Kibana Logs)"
