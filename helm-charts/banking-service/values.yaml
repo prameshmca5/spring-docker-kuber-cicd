@@ -17,6 +17,7 @@ appConfig: {}
 ingress:
   enabled: false
   host: "qactsai.local"
+  rewriteTarget: "/$2"
   annotations: {}
 
 resources:

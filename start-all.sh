@@ -45,6 +45,7 @@ kubectl wait --namespace ingress-nginx \
 echo -e "${BLUE}Step 4: Cleaning up previous port-forwards...${NC}"
 sudo pkill -f "kubectl port-forward.*80:80" 2>/dev/null || true
 pkill -f "kubectl port-forward.*8888:80" 2>/dev/null || true
+pkill -f "kubectl port-forward.*8761:8761" 2>/dev/null || true
 sleep 1
 
 # 5. Detect Local IP for Whitelisting
@@ -69,12 +70,28 @@ nohup sudo kubectl port-forward --namespace=ingress-nginx service/ingress-nginx-
 # Wait for binding
 sleep 4
 
-# 8. Verify and Final Check
+# 8. Start Discovery Server Port-Forward for Local View
+echo -e "${BLUE}Step 8: Starting Discovery Server Port-Forward on 8761 (local view)...${NC}"
+if kubectl get svc -n backend discovery-server >/dev/null 2>&1; then
+    nohup kubectl port-forward --namespace=backend service/discovery-server 8761:8761 --address=127.0.0.1 > /tmp/k8s-portforward-8761.log 2>&1 &
+    sleep 2
+    if lsof -nP -iTCP:8761 -sTCP:LISTEN 2>/dev/null | grep -q "kubectl"; then
+        echo -e "${GREEN}Discovery Server port-forward active on 127.0.0.1:8761${NC}"
+    else
+        echo -e "${YELLOW}Warning: Discovery Server port-forward may not have started. Check /tmp/k8s-portforward-8761.log${NC}"
+    fi
+else
+    echo -e "${YELLOW}Warning: discovery-server service not found in namespace 'backend'. Skipping local view setup.${NC}"
+fi
+
+# 9. Verify and Final Check
 if lsof -nP -iTCP:80 -sTCP:LISTEN 2>/dev/null | grep -q "kubectl\|sudo"; then
     echo -e "${SUCCESS}================================================${NC}"
     echo -e "${GREEN}🚀 ALL SERVICES ARE READY ON PORT 80!${NC}"
     echo -e "${SUCCESS}================================================${NC}"
     echo -e "You can now access your services at:"
+    echo -e "👉 ${GREEN}http://qactsai.local/discovery-server${NC} (Eureka / Service Discovery)"
+    echo -e "👉 ${GREEN}http://localhost:8761${NC}              (Local Eureka View)"
     echo -e "👉 ${GREEN}http://qactsai.local/login${NC}"
     echo -e "👉 ${GREEN}http://jaeger.local${NC}"
     echo -e "👉 ${GREEN}http://kibana.local${NC}"
@@ -87,6 +104,7 @@ if lsof -nP -iTCP:80 -sTCP:LISTEN 2>/dev/null | grep -q "kubectl\|sudo"; then
     echo -e "MySQL:    ${GREEN}mysql.db.svc.cluster.local:3306${NC}"
     echo ""
     echo -e "${YELLOW}Note: If pages don't load, check /tmp/k8s-portforward-80.log${NC}"
+    echo -e "${YELLOW}Note: If Eureka local view doesn't load, check /tmp/k8s-portforward-8761.log${NC}"
     echo -e "${YELLOW}Note: Ensure the following are in your /etc/hosts file:${NC}"
     echo -e "      127.0.0.1 kafka-ui.local mysql.db postgres.db"
 else

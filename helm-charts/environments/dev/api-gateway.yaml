@@ -5,5 +5,4 @@ ingress:
   enabled: true
   host: "qactsai.local"
   path: "/api(/|$)(.*)"
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /api/$2
+  rewriteTarget: "/api/$2"
