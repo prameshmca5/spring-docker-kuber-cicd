@@ -35,6 +35,7 @@ pipeline {
         ], description: 'Backend service to deploy, or ALL')
 
         string(name: 'IMAGE_TAG', defaultValue: 'latest', trim: true, description: 'Docker image tag')
+        string(name: 'DOCKERHUB_USERNAME', defaultValue: '', trim: true, description: 'Docker Hub username used for image repository (docker.io/<username>/...)')
         choice(name: 'DEPLOY_ENVIRONMENT', choices: ['dev', 'staging', 'prod'], description: 'Environment label for deployment metadata')
     }
 
@@ -217,6 +218,25 @@ KUBEEOF
             }
         }
 
+        stage('Configure Docker Hub Images') {
+            when {
+                expression {
+                    return params.DEPLOY_BACKEND || params.DEPLOY_FRONTEND
+                }
+            }
+            steps {
+                sh '''
+                    if [ -z "${DOCKERHUB_USERNAME}" ]; then
+                      echo "ERROR: DOCKERHUB_USERNAME is required to deploy images from Docker Hub."
+                      exit 1
+                    fi
+
+                    chmod +x update-gitops-values.sh
+                    ./update-gitops-values.sh "${DOCKERHUB_USERNAME}" "${IMAGE_TAG}"
+                '''
+            }
+        }
+
         stage('Deploy Database') {
             when {
                 expression { return params.DEPLOY_DATABASE }
@@ -236,6 +256,7 @@ KUBEEOF
             steps {
                 sh '''
                     chmod +x deploy-all.sh
+                    export IMAGE_VERSION="${IMAGE_TAG}"
                     ./deploy-all.sh --namespace backend --service "${BACKEND_SERVICE}"
                 '''
             }
