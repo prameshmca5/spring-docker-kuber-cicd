@@ -10,15 +10,25 @@ spec:
     - list:
         elements:
           - service: discovery-server
+            port: 8761
           - service: api-gateway
+            port: 8080
           - service: account-service
+            port: 8080
           - service: customer-service
+            port: 8080
           - service: transaction-service
+            port: 8080
           - service: notification-service
+            port: 8080
           - service: payment-service
+            port: 8080
           - service: employee-service
+            port: 8080
           - service: common-service
+            port: 8080
           - service: auth-service
+            port: 8080
   template:
     metadata:
       name: "{{service}}"
@@ -32,9 +42,20 @@ spec:
         path: helm-charts/banking-service
         helm:
           releaseName: "{{service}}"
-          valueFiles:
-            - "values-{{service}}.yaml"
-            - "../environments/dev/{{service}}.yaml"
+          values: |
+            serviceName: "{{service}}"
+            service:
+              port: {{port}}
+            image:
+              repository: "springbootapps-{{service}}"
+              pullPolicy: IfNotPresent
+              tag: "latest"
+            ingress:
+              enabled: true
+              host: "qactsai.local"
+            activeColor: "blue"
+            color: "blue"
+            createService: true
       destination:
         server: https://kubernetes.default.svc
         namespace: backend
@@ -42,3 +63,5 @@ spec:
         automated:
           prune: true
           selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
