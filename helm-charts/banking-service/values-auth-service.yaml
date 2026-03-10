@@ -1,7 +1,7 @@
 serviceName: "auth-service"
 image:
-  repository: "springbootapps-auth-service"
-  pullPolicy: IfNotPresent
+  repository: "docker.io/rameshkp2/auth-service"
+  pullPolicy: Always
   tag: "latest"
 service:
   type: ClusterIP
