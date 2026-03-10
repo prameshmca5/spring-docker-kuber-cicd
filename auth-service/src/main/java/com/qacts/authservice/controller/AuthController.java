@@ -7,7 +7,6 @@ import com.qacts.authservice.entity.User;
 import com.qacts.authservice.repository.UserRepository;
 import com.qacts.authservice.util.JwtUtils;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -20,28 +19,32 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
-    @Autowired
-    AuthenticationManager authenticationManager;
+    private static final String DEFAULT_ROLE = "ROLE_USER";
 
-    @Autowired
-    UserRepository userRepository;
+    private final AuthenticationManager authenticationManager;
+    private final UserRepository userRepository;
+    private final PasswordEncoder encoder;
+    private final JwtUtils jwtUtils;
 
-    @Autowired
-    PasswordEncoder encoder;
-
-    @Autowired
-    JwtUtils jwtUtils;
+    public AuthController(
+            AuthenticationManager authenticationManager,
+            UserRepository userRepository,
+            PasswordEncoder encoder,
+            JwtUtils jwtUtils) {
+        this.authenticationManager = authenticationManager;
+        this.userRepository = userRepository;
+        this.encoder = encoder;
+        this.jwtUtils = jwtUtils;
+    }
 
     @PostMapping("/login")
-    public ResponseEntity<?> authenticateUser(@Valid @RequestBody AuthRequest loginRequest) {
+    public ResponseEntity<AuthResponse> authenticateUser(@Valid @RequestBody AuthRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginRequest.username(), loginRequest.password()));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        org.springframework.security.core.userdetails.User userDetails = (org.springframework.security.core.userdetails.User) authentication
-                .getPrincipal();
-
-        User user = userRepository.findByUsername(userDetails.getUsername()).orElseThrow();
+        String username = authentication.getName();
+        User user = userRepository.findByUsername(username).orElseThrow();
         String jwt = jwtUtils.generateJwtToken(user.getUsername(), user.getRole(), user.getId());
 
         return ResponseEntity.ok(new AuthResponse(
@@ -54,7 +57,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest signUpRequest) {
+    public ResponseEntity<String> registerUser(@Valid @RequestBody RegisterRequest signUpRequest) {
         if (userRepository.existsByUsername(signUpRequest.username())) {
             return ResponseEntity.badRequest().body("Error: Username is already taken!");
         }
@@ -63,10 +66,7 @@ public class AuthController {
             return ResponseEntity.badRequest().body("Error: Email is already in use!");
         }
 
-        // Create new user's account
-        String role = (signUpRequest.role() != null && !signUpRequest.role().isEmpty())
-                ? signUpRequest.role()
-                : "ROLE_USER";
+        String role = normalizeRole(signUpRequest.role());
 
         User user = new User(signUpRequest.username(),
                 signUpRequest.email(),
@@ -76,5 +76,14 @@ public class AuthController {
         userRepository.save(user);
 
         return ResponseEntity.ok("User registered successfully!");
+    }
+
+    private String normalizeRole(String role) {
+        if (role == null || role.isBlank()) {
+            return DEFAULT_ROLE;
+        }
+
+        String normalized = role.trim().toUpperCase();
+        return normalized.startsWith("ROLE_") ? normalized : "ROLE_" + normalized;
     }
 }

@@ -24,9 +24,9 @@ public class DataInitializer {
                         passwordEncoder.encode("admin"),
                         "ROLE_ADMIN");
                 userRepository.save(admin);
-                log.info("✅ Default admin user created: username=admin, password=admin");
+                log.info("Default admin user created: username=admin");
             } else {
-                log.info("ℹ️ Admin user already exists, skipping seeding.");
+                log.info("Admin user already exists, skipping seeding.");
             }
         };
     }

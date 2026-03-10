@@ -3,7 +3,6 @@ package com.qacts.apigateway.filter;
 import com.qacts.apigateway.util.JwtUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.http.HttpHeaders;
@@ -17,14 +16,13 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
 
     private static final Logger log = LoggerFactory.getLogger(AuthenticationFilter.class);
 
-    @Autowired
-    private RouteValidator validator;
+    private final RouteValidator validator;
+    private final JwtUtil jwtUtil;
 
-    @Autowired
-    private JwtUtil jwtUtil;
-
-    public AuthenticationFilter() {
+    public AuthenticationFilter(RouteValidator validator, JwtUtil jwtUtil) {
         super(Config.class);
+        this.validator = validator;
+        this.jwtUtil = jwtUtil;
     }
 
     @Override
@@ -34,11 +32,15 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                 // header contains token or not
                 if (!exchange.getRequest().getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
                     log.warn("Missing Authorization header for request: {}", exchange.getRequest().getURI());
-                    return onError(exchange, "Missing authorization header", HttpStatus.UNAUTHORIZED);
+                    return onError(exchange, HttpStatus.UNAUTHORIZED);
                 }
 
-                String authHeader = exchange.getRequest().getHeaders().get(HttpHeaders.AUTHORIZATION).get(0);
-                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+                if (authHeader == null || authHeader.isBlank()) {
+                    log.warn("Blank Authorization header for request: {}", exchange.getRequest().getURI());
+                    return onError(exchange, HttpStatus.UNAUTHORIZED);
+                }
+                if (authHeader.startsWith("Bearer ")) {
                     authHeader = authHeader.substring(7);
                 }
                 try {
@@ -58,14 +60,14 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                 } catch (Exception e) {
                     log.error("Token validation failed for request: {}. Error: {}", exchange.getRequest().getURI(),
                             e.getMessage());
-                    return onError(exchange, "Unauthorized access to application", HttpStatus.UNAUTHORIZED);
+                    return onError(exchange, HttpStatus.UNAUTHORIZED);
                 }
             }
             return chain.filter(exchange);
         });
     }
 
-    private Mono<Void> onError(ServerWebExchange exchange, String err, HttpStatus httpStatus) {
+    private Mono<Void> onError(ServerWebExchange exchange, HttpStatus httpStatus) {
         exchange.getResponse().setStatusCode(httpStatus);
         return exchange.getResponse().setComplete();
     }
