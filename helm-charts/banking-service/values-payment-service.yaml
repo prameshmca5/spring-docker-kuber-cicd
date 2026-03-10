@@ -1,7 +1,7 @@
 serviceName: "payment-service"
 image:
-  repository: "springbootapps-payment-service"
-  pullPolicy: IfNotPresent
+  repository: "docker.io/rameshkp2/payment-service"
+  pullPolicy: Always
   tag: "latest"
 service:
   type: ClusterIP

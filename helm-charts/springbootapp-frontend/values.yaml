@@ -4,8 +4,8 @@
 replicaCount: 1
 
 image:
-  repository: springbootapps-react-frontend
-  pullPolicy: IfNotPresent
+  repository: "docker.io/rameshkp2/react-frontend"
+  pullPolicy: Always
   tag: "latest"
 
 imagePullSecrets: []

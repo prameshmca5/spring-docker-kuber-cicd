@@ -1,7 +1,7 @@
 serviceName: "notification-service"
 image:
-  repository: "springbootapps-notification-service"
-  pullPolicy: IfNotPresent
+  repository: "docker.io/rameshkp2/notification-service"
+  pullPolicy: Always
   tag: "latest"
 service:
   type: ClusterIP
