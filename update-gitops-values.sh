@@ -26,7 +26,7 @@ update_value_file() {
   local file="$1"
   local repository="$2"
 
-  perl -0pi -e "s|repository: ?\"?[^\n\"]+\"?|repository: \"${repository}\"|g; s|pullPolicy: ?[^\n]+|pullPolicy: IfNotPresent|g; s|tag: ?\"?[^\n\"]+\"?|tag: \"${IMAGE_TAG}\"|g" "$file"
+  perl -0pi -e "s|repository: ?\"?[^\n\"]+\"?|repository: \"${repository}\"|g; s|pullPolicy: ?[^\n]+|pullPolicy: Always|g; s|tag: ?\"?[^\n\"]+\"?|tag: \"${IMAGE_TAG}\"|g" "$file"
 }
 
 for service in "${BACKEND_SERVICES[@]}"; do

@@ -74,9 +74,9 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Derive image tag
+      - name: Set image tag
         id: version
-        run: echo "image_tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+        run: echo "image_tag=latest" >> "$GITHUB_OUTPUT"
 
       - name: Verify Docker Hub secrets
         run: |
@@ -96,23 +96,21 @@ jobs:
       - name: Build and push backend images
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          IMAGE_TAG: ${{ steps.version.outputs.image_tag }}
         run: |
           for service in $SERVICES; do
             image="${REGISTRY}/${DOCKERHUB_USERNAME}/${service}"
-            docker build -t "${image}:${IMAGE_TAG}" -t "${image}:latest" "./${service}"
-            docker push "${image}:${IMAGE_TAG}"
+            docker image rm "${image}:latest" || true
+            docker build --pull --no-cache -t "${image}:latest" "./${service}"
             docker push "${image}:latest"
           done
 
       - name: Build and push frontend image
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          IMAGE_TAG: ${{ steps.version.outputs.image_tag }}
         run: |
           image="${REGISTRY}/${DOCKERHUB_USERNAME}/${FRONTEND_IMAGE}"
-          docker build -t "${image}:${IMAGE_TAG}" -t "${image}:latest" ./react-frontend
-          docker push "${image}:${IMAGE_TAG}"
+          docker image rm "${image}:latest" || true
+          docker build --pull --no-cache -t "${image}:latest" ./react-frontend
           docker push "${image}:latest"
 
   update-gitops:
