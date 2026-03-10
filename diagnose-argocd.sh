@@ -176,9 +176,9 @@ else
     echo -e "${YELLOW}⚠️  Repository server TLS not configured${NC}"
 fi
 
-# Check expected backend applications
-echo -e "${BLUE}Checking backend application set...${NC}"
-expected_apps=("backend-shared" "frontend" "monitoring" "db-storage" "db-mysql-shared" "kafka" "db-auth-postgres" "mysql-account" "postgres-customer" "mysql-transaction" "mysql-common" "mysql-notification" "mysql-payment" "postgres-employee" "discovery-server" "api-gateway" "account-service" "customer-service" "transaction-service" "notification-service" "payment-service" "employee-service" "common-service" "auth-service")
+# Check expected applications
+echo -e "${BLUE}Checking expected applications...${NC}"
+expected_apps=("backend-shared" "frontend" "monitoring" "kafka" "db-storage" "db-mysql-shared" "db-auth-postgres" "mysql-account" "postgres-customer" "mysql-transaction" "mysql-common" "mysql-notification" "mysql-payment" "postgres-employee" "discovery-server" "api-gateway" "account-service" "customer-service" "transaction-service" "notification-service" "payment-service" "employee-service" "common-service" "auth-service")
 
 missing_apps=0
 for app in "${expected_apps[@]}"; do

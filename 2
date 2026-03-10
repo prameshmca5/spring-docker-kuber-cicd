@@ -1,0 +1,24 @@
+build-images.sh:101:echo "=> Building frontend image: springbootapps-react-frontend:${IMAGE_TAG}"
+build-images.sh:103:  -t "springbootapps-react-frontend:${IMAGE_TAG}" \
+build-images.sh:104:  "$SCRIPT_DIR/react-frontend"
+build-images.sh:107:  $MINIKUBE image load "springbootapps-react-frontend:${IMAGE_TAG}"
+build-images.sh:108:  echo "   ✔ Done: springbootapps-react-frontend:${IMAGE_TAG} (loaded into Minikube)"
+build-images.sh:110:  echo "   ✔ Done: springbootapps-react-frontend:${IMAGE_TAG} (Minikube load skipped)"
+deploy-local-gitops.sh:136:  helm-charts/springbootapp-frontend/values.yaml \
+diagnose-argocd.sh:123:    if helm template test-release helm-charts/springbootapp-frontend >/dev/null 2>&1; then
+diagnose-argocd.sh:127:        helm template test-release helm-charts/springbootapp-frontend 2>&1 | head -5
+install-frontend.sh:15:$HELM upgrade --install springbootapp-frontend ./helm-charts/springbootapp-frontend --namespace $NAMESPACE
+load-images.sh:58:  "springbootapps-react-frontend:${IMAGE_TAG}"
+run-local-pipeline.sh:68:helm upgrade --install springbootapp-frontend ./helm-charts/springbootapp-frontend --namespace frontend --create-namespace --set image.tag="${IMAGE_VERSION:-latest}"
+update-gitops-values.sh:36:update_value_file "helm-charts/springbootapp-frontend/values.yaml" "docker.io/${DOCKERHUB_USERNAME}/react-frontend"
+argocd/apps/frontend/frontend.yaml:15:    path: helm-charts/springbootapp-frontend
+argocd/apps/frontend/frontend.yaml:17:      releaseName: springbootapp-frontend
+argocd/apps/frontend.yaml:15:    path: helm-charts/springbootapp-frontend
+argocd/apps/frontend.yaml:17:      releaseName: springbootapp-frontend
+helm-charts/springbootapp-frontend/values.yaml:1:# Default values for springbootapp-frontend.
+helm-charts/springbootapp-frontend/values.yaml:7:  repository: "docker.io/rameshkp2/react-frontend"
+.github/workflows/ci-cd.yml:22:  FRONTEND_IMAGE: react-frontend
+.github/workflows/ci-cd.yml:45:          cache-dependency-path: react-frontend/package-lock.json
+.github/workflows/ci-cd.yml:51:        working-directory: react-frontend
+.github/workflows/ci-cd.yml:113:          docker build --pull --no-cache -t "${image}:latest" ./react-frontend
+.github/workflows/ci-cd.yml:139:          git add helm-charts/banking-service/values-*.yaml helm-charts/springbootapp-frontend/values.yaml

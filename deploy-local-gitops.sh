@@ -135,7 +135,7 @@ git add \
   helm-charts/banking-service/values-*.yaml \
   helm-charts/springbootapp-frontend/values.yaml \
   argocd \
-  gitops/db
+  gitops
 
 if git diff --cached --quiet; then
   log "No git changes to commit"

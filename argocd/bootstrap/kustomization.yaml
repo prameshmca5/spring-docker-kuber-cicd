@@ -4,8 +4,10 @@ resources:
   - ../projects/backend.yaml
   - ../projects/frontend.yaml
   - ../projects/db.yaml
+  - ../projects/external-tools.yaml
   - ../projects/monitoring.yaml
   - ../apps/backend
   - ../apps/frontend
   - ../apps/db
+  - ../apps/external-tools
   - ../apps/monitoring

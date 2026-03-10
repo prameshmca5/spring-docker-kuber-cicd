@@ -3,7 +3,6 @@ kind: Kustomization
 resources:
   - db-storage.yaml
   - db-mysql-shared.yaml
-  - kafka.yaml
   - db-auth-postgres.yaml
   - mysql-account.yaml
   - postgres-customer.yaml

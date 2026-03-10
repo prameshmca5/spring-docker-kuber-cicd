@@ -77,9 +77,15 @@ for app in "${backend_apps[@]}"; do
 done
 
 # Check database applications
-db_apps=("db-storage" "db-mysql-shared" "kafka" "db-auth-postgres" "mysql-account" "postgres-customer" "mysql-transaction" "mysql-common" "mysql-notification" "mysql-payment" "postgres-employee")
+db_apps=("db-storage" "db-mysql-shared" "db-auth-postgres" "mysql-account" "postgres-customer" "mysql-transaction" "mysql-common" "mysql-notification" "mysql-payment" "postgres-employee")
 for app in "${db_apps[@]}"; do
     check_application "$app" "Database Application"
+done
+
+# Check external tools applications
+external_tools_apps=("kafka")
+for app in "${external_tools_apps[@]}"; do
+    check_application "$app" "External Tools Application"
 done
 
 # Check for common issues

@@ -1,16 +1,16 @@
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
-  name: db
+  name: external-tools
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "-1"
 spec:
-  description: Database applications for the banking platform
+  description: Shared external tooling for the banking platform
   sourceRepos:
     - https://github.com/prameshmca5/spring-docker-kuber-cicd.git
   destinations:
-    - namespace: db
+    - namespace: external-tools
       server: https://kubernetes.default.svc
   clusterResourceWhitelist:
     - group: '*'
