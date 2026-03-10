@@ -9,7 +9,7 @@ on:
   pull_request:
   push:
     branches:
-      - develop-github-cicd
+      - cicd-docker-k8s-helm-argocd
 
 jobs:
   qodana:

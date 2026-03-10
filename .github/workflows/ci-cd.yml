@@ -3,10 +3,10 @@ name: Docker Hub GitOps Pipeline
 on:
   push:
     branches:
-      - develop-github-cicd
+      - cicd-docker-k8s-helm-argocd
   pull_request:
     branches:
-      - develop-github-cicd
+      - cicd-docker-k8s-helm-argocd
   workflow_dispatch:
 
 permissions:

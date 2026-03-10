@@ -8,7 +8,7 @@ DOCKERHUB_USERNAME=""
 DOCKERHUB_TOKEN="${DOCKERHUB_TOKEN:-}"
 REPO_URL=""
 IMAGE_TAG="latest"
-BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "develop-github-cicd")"
+BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "cicd-docker-k8s-helm-argocd")"
 SKIP_PUSH=false
 SKIP_GH=false
 SKIP_WORKFLOW=false
@@ -37,7 +37,7 @@ Example:
   ./deploy-local-gitops.sh \
     --dockerhub-username rameshkp2 \
     --repo-url https://github.com/rameshkp2/spring-docker-kuber-cicd.git \
-    --branch develop-github-cicd
+    --branch cicd-docker-k8s-helm-argocd
 EOF
 }
 
