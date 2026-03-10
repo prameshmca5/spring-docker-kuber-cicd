@@ -5,8 +5,10 @@ replicaCount: 1
 
 image:
   repository: "springbootapps-example-service"
-  pullPolicy: Never
+  pullPolicy: IfNotPresent
   tag: "latest"
+
+imagePullSecrets: []
 
 service:
   type: ClusterIP

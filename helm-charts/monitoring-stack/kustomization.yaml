@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: monitoring
+generatorOptions:
+  disableNameSuffixHash: true
+resources:
+  - alertmanager.yaml
+  - grafana.yaml
+  - jaeger.yaml
+  - kafka-exporter.yaml
+  - kube-state-metrics.yaml
+  - loki.yaml
+  - node-exporter.yaml
+  - prometheus.yaml
+  - promtail.yaml
+  - pushgateway.yaml
+configMapGenerator:
+  - name: grafana-dashboards-files
+    files:
+      - dashboards/jvm-performance.json
+      - dashboards/kafka-pipeline.json
+      - dashboards/log-explorer.json
+      - dashboards/microservices-overview.json

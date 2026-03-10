@@ -1,7 +1,7 @@
 serviceName: "account-service"
 image:
   repository: "springbootapps-account-service"
-  pullPolicy: Never
+  pullPolicy: IfNotPresent
   tag: "latest"
 service:
   type: ClusterIP

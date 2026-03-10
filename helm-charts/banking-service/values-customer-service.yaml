@@ -1,7 +1,7 @@
 serviceName: "customer-service"
 image:
   repository: "springbootapps-customer-service"
-  pullPolicy: Never
+  pullPolicy: IfNotPresent
   tag: "latest"
 service:
   type: ClusterIP

@@ -1,7 +1,7 @@
 serviceName: "discovery-server"
 image:
   repository: "springbootapps-discovery-server"
-  pullPolicy: Never
+  pullPolicy: IfNotPresent
   tag: "latest"
 service:
   type: ClusterIP

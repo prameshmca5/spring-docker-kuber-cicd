@@ -5,7 +5,7 @@ replicaCount: 1
 
 image:
   repository: springbootapps-react-frontend
-  pullPolicy: Never
+  pullPolicy: IfNotPresent
   tag: "latest"
 
 imagePullSecrets: []

@@ -1,7 +1,7 @@
 serviceName: "transaction-service"
 image:
   repository: "springbootapps-transaction-service"
-  pullPolicy: Never
+  pullPolicy: IfNotPresent
   tag: "latest"
 service:
   type: ClusterIP

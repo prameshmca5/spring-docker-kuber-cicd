@@ -1,7 +1,7 @@
 serviceName: "payment-service"
 image:
   repository: "springbootapps-payment-service"
-  pullPolicy: Never
+  pullPolicy: IfNotPresent
   tag: "latest"
 service:
   type: ClusterIP

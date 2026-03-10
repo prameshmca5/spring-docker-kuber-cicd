@@ -1,7 +1,7 @@
 serviceName: "notification-service"
 image:
   repository: "springbootapps-notification-service"
-  pullPolicy: Never
+  pullPolicy: IfNotPresent
   tag: "latest"
 service:
   type: ClusterIP

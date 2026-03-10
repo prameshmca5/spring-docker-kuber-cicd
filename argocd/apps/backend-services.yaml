@@ -1,0 +1,46 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: banking-backend-services
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  generators:
+    - list:
+        elements:
+          - service: discovery-server
+          - service: api-gateway
+          - service: account-service
+          - service: customer-service
+          - service: transaction-service
+          - service: notification-service
+          - service: payment-service
+          - service: employee-service
+          - service: common-service
+          - service: auth-service
+  template:
+    metadata:
+      name: "{{service}}"
+      labels:
+        app.kubernetes.io/part-of: banking-platform
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/prameshmca5/spring-docker-kuber-cicd.git
+        targetRevision: HEAD
+        path: helm-charts/banking-service
+        helm:
+          releaseName: "{{service}}"
+          valueFiles:
+            - "values-{{service}}.yaml"
+            - "../environments/dev/{{service}}.yaml"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: backend
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
