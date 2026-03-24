@@ -2,16 +2,27 @@
 
 export PATH=$PATH:/usr/local/bin:/opt/homebrew/bin
 source "$(dirname "$0")/colors.sh"
+source "$(dirname "$0")/k8s-preflight.sh"
 
 echo -e "${HEADER}==========================================${NC}"
 echo -e "${SUCCESS}Starting Spring Boot Kubernetes System${NC}"
 echo -e "${HEADER}==========================================${NC}"
 
+# Preflight: verify binaries and wait for Docker before starting Minikube
+echo -e "${BLUE}Preflight: Checking Docker, Minikube, and kubectl...${NC}"
+if ! init_k8s_binaries; then
+    exit 1
+fi
+
+if ! wait_for_docker_daemon; then
+    exit 1
+fi
+
 # 1. Start Minikube
 echo -e "${BLUE}Step 1: Starting Minikube...${NC}"
-minikube start --driver=docker
+"$MINIKUBE_BIN" start --driver=docker
 if [ $? -ne 0 ]; then
-    echo -e "${RED}Failed to start Minikube! Please check Docker and Minikube installations.${NC}"
+    echo -e "${RED}Failed to start Minikube. Docker is reachable, so inspect the Minikube output above for the exact cause.${NC}"
     exit 1
 fi
 

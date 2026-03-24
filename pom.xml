@@ -37,6 +37,8 @@
         <module>notification-service</module>
 
         <module>payment-service</module>
+        <module>card-service</module>
+        <module>loan-service</module>
         <module>common-service</module>
         <module>auth-service</module>
     </modules>

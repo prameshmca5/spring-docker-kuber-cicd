@@ -17,7 +17,7 @@ RUN chown appuser:appgroup app.jar
 
 USER appuser
 
-EXPOSE 8080 8081 8082 8083 8084 8085 8761
+EXPOSE 8080 8081 8082 8083 8084 8085 8086 8087 8761
 
 # JVM tuning for containerized environments
 ENTRYPOINT ["java", \

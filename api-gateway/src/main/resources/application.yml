@@ -27,6 +27,12 @@ spring:
                       - Path=/api/v1/accounts/**
                   filters:
                       - AuthenticationFilter
+                - id: standing-order-service
+                  uri: lb://account-service
+                  predicates:
+                      - Path=/api/v1/standing-orders/**
+                  filters:
+                      - AuthenticationFilter
                 - id: customer-service
                   uri: lb://customer-service
                   predicates:
@@ -39,6 +45,12 @@ spring:
                       - Path=/api/v1/transactions/**
                   filters:
                       - AuthenticationFilter
+                - id: transfer-service
+                  uri: lb://transaction-service
+                  predicates:
+                      - Path=/api/v1/transfers/**
+                  filters:
+                      - AuthenticationFilter
                 - id: notification-service
                   uri: lb://notification-service
                   predicates:
@@ -49,6 +61,24 @@ spring:
                   uri: lb://payment-service
                   predicates:
                       - Path=/api/v1/payments/**
+                  filters:
+                      - AuthenticationFilter
+                - id: biller-service
+                  uri: lb://payment-service
+                  predicates:
+                      - Path=/api/v1/billers/**
+                  filters:
+                      - AuthenticationFilter
+                - id: card-service
+                  uri: lb://card-service
+                  predicates:
+                      - Path=/api/v1/cards/**
+                  filters:
+                      - AuthenticationFilter
+                - id: loan-service
+                  uri: lb://loan-service
+                  predicates:
+                      - Path=/api/v1/loans/**
                   filters:
                       - AuthenticationFilter
                 - id: kafka-sample

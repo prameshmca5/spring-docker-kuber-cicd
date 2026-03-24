@@ -86,6 +86,50 @@ spec:
   storageClassName: manual
   resources: { requests: { storage: 2Gi } }
 ---
+# MySQL Card
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-pv-card
+spec:
+  capacity: { storage: 2Gi }
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath: { path: "/mnt/data/mysql-card" }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-card-pvc
+  namespace: db
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: manual
+  resources: { requests: { storage: 2Gi } }
+---
+# MySQL Loan
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-pv-loan
+spec:
+  capacity: { storage: 2Gi }
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath: { path: "/mnt/data/mysql-loan" }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-loan-pvc
+  namespace: db
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: manual
+  resources: { requests: { storage: 2Gi } }
+---
 # MySQL Transaction
 apiVersion: v1
 kind: PersistentVolume

@@ -17,6 +17,8 @@ SERVICES=(
   "transaction-service"
   "notification-service"
   "payment-service"
+  "card-service"
+  "loan-service"
   "employee-service"
   "common-service"
   "auth-service"

@@ -3,10 +3,21 @@
 # start-all.sh: Complete startup script for post-restart access on Port 80
 export PATH=$PATH:/usr/local/bin:/opt/homebrew/bin
 source "$(dirname "$0")/colors.sh"
+source "$(dirname "$0")/k8s-preflight.sh"
 
 echo -e "${HEADER}================================================${NC}"
 echo -e "${SUCCESS}   Universal Local Startup (Port 80)   ${NC}"
 echo -e "${HEADER}================================================${NC}"
+
+# Preflight: verify binaries and wait for Docker before requesting sudo
+echo -e "${BLUE}Preflight: Checking Docker, Minikube, and kubectl...${NC}"
+if ! init_k8s_binaries; then
+    exit 1
+fi
+
+if ! wait_for_docker_daemon; then
+    exit 1
+fi
 
 # 0. Request Sudo access early
 echo -e "${YELLOW}This script requires sudo to bind to port 80.${NC}"
@@ -22,9 +33,13 @@ while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 
 # 1. Start Minikube
 echo -e "${BLUE}Step 1: Ensuring Minikube is started...${NC}"
-minikube status | grep -q "Running"
+"$MINIKUBE_BIN" status | grep -q "Running"
 if [ $? -ne 0 ]; then
-    minikube start --driver=docker
+    "$MINIKUBE_BIN" start --driver=docker
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}Failed to start Minikube. Docker is reachable, so inspect the Minikube output above for the exact cause.${NC}"
+        exit 1
+    fi
 else
     echo -e "${GREEN}Minikube is already running.${NC}"
 fi

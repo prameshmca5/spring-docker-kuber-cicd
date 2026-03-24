@@ -10,4 +10,6 @@ resources:
   - mysql-common.yaml
   - mysql-notification.yaml
   - mysql-payment.yaml
+  - mysql-card.yaml
+  - mysql-loan.yaml
   - postgres-employee.yaml

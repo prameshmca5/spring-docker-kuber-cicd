@@ -37,6 +37,16 @@ echo "=> Deploying mysql-payment..."
 $HELM upgrade --install mysql-payment $CHART_DIR --namespace $NAMESPACE \
   --set type=mysql --set name=mysql-payment --set mysql.database=payment_db
 
+# mysql-card
+echo "=> Deploying mysql-card..."
+$HELM upgrade --install mysql-card $CHART_DIR --namespace $NAMESPACE \
+  --set type=mysql --set name=mysql-card --set mysql.database=card_db
+
+# mysql-loan
+echo "=> Deploying mysql-loan..."
+$HELM upgrade --install mysql-loan $CHART_DIR --namespace $NAMESPACE \
+  --set type=mysql --set name=mysql-loan --set mysql.database=loan_db
+
 # postgres-employee
 echo "=> Deploying postgres-employee..."
 $HELM upgrade --install postgres-employee $CHART_DIR --namespace $NAMESPACE \

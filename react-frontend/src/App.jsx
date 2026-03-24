@@ -19,8 +19,11 @@ import NotificationsCenter from './components/NotificationsCenter';
 import ReportsCenter from './components/ReportsCenter';
 import LoansCenter from './components/LoansCenter';
 import AuditCenter from './components/AuditCenter';
+import BankingSectionPage from './components/BankingSectionPage';
+import BankingWorkspacePage from './components/BankingWorkspacePage';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import { CUSTOMER_MENU_SECTIONS } from './config/bankingMenu';
 import './App.css';
 
 function App() {
@@ -35,6 +38,28 @@ function App() {
           <Route path="/dashboard" element={<ProtectedRoute />}>
             <Route element={<BankingDashboard />}>
               <Route index element={<DashboardHome />} />
+              {CUSTOMER_MENU_SECTIONS.map((section) => (
+                <Route key={section.id} path={section.slug}>
+                  <Route index element={<BankingSectionPage sectionId={section.id} />} />
+                  {section.items.map((item) => {
+                    if (section.id === 'payments' && item.id === 'credit-card-payment') {
+                      return <Route key={item.id} path={item.slug} element={<PaymentScreen />} />;
+                    }
+
+                    if (section.id === 'loans' && item.id === 'summary') {
+                      return <Route key={item.id} path={item.slug} element={<LoansCenter />} />;
+                    }
+
+                    return (
+                      <Route
+                        key={item.id}
+                        path={item.slug}
+                        element={<BankingWorkspacePage sectionId={section.id} itemId={item.id} />}
+                      />
+                    );
+                  })}
+                </Route>
+              ))}
               <Route path="accounts">
                 <Route index element={<AccountsCards />} />
                 <Route path="list" element={<AccountsList />} />
@@ -45,11 +70,9 @@ function App() {
                 <Route path="list" element={<TransfersList />} />
                 <Route path="create" element={<TransferCreate />} />
               </Route>
-              <Route path="payments" element={<PaymentScreen />} />
               <Route path="employees" element={<EmployeeDashboard />} />
               <Route path="notifications" element={<NotificationsCenter />} />
               <Route path="reports" element={<ReportsCenter />} />
-              <Route path="loans" element={<LoansCenter />} />
               <Route path="audit" element={<AuditCenter />} />
               <Route path="kafka-sample" element={<KafkaSample />} />
               <Route path="settings" element={<Settings />} />

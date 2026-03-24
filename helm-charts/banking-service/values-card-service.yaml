@@ -1,0 +1,8 @@
+serviceName: "card-service"
+image:
+  repository: "docker.io/rameshkp2/card-service"
+  pullPolicy: Always
+  tag: "latest"
+service:
+  type: ClusterIP
+  port: 8086

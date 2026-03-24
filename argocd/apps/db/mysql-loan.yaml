@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mysql-loan
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: banking-platform
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: db
+  source:
+    repoURL: https://github.com/prameshmca5/spring-docker-kuber-cicd.git
+    targetRevision: cicd-docker-k8s-helm-argocd
+    path: helm-charts/dedicated-db
+    helm:
+      releaseName: mysql-loan
+      parameters:
+        - name: type
+          value: mysql
+        - name: name
+          value: mysql-loan
+        - name: mysql.database
+          value: loan_db
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: db
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

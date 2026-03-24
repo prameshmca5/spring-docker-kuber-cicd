@@ -12,6 +12,8 @@ SERVICES=(
   customer-service
   discovery-server
   employee-service
+  card-service
+  loan-service
   notification-service
   payment-service
   transaction-service

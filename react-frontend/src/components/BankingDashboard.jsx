@@ -1,46 +1,38 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
-    Activity,
-    BarChart3,
     Bell,
-    Building2,
-    CreditCard,
+    ChevronDown,
+    ChevronRight,
     LayoutDashboard,
     LogOut,
-    NotebookText,
     Menu,
     Settings,
-    ShieldCheck,
     User,
-    Users,
-    Wallet,
     X,
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import NotificationService from '../services/NotificationService';
-
-const MENU_ITEMS = [
-    { to: '/dashboard', label: 'Overview', icon: LayoutDashboard, end: true },
-    { to: '/dashboard/accounts/list', label: 'Accounts', icon: CreditCard },
-    { to: '/dashboard/transfers/list', label: 'Transfers', icon: Building2 },
-    { to: '/dashboard/payments', label: 'Payments', icon: Wallet },
-    { to: '/dashboard/employees', label: 'Employees', icon: Users },
-    { to: '/dashboard/notifications', label: 'Notifications', icon: Bell },
-    { to: '/dashboard/reports', label: 'Reports', icon: BarChart3 },
-    { to: '/dashboard/loans', label: 'Loans', icon: ShieldCheck },
-    { to: '/dashboard/audit', label: 'Audit', icon: NotebookText },
-    { to: '/dashboard/kafka-sample', label: 'Events', icon: Activity },
-    { to: '/dashboard/settings', label: 'Settings', icon: Settings },
-];
+import {
+    CUSTOMER_MENU_SECTIONS,
+    OPERATIONS_MENU_ITEMS,
+    getDashboardMeta,
+} from '../config/bankingMenu';
 
 const BankingDashboard = () => {
     const { user, logout } = useContext(AuthContext);
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [notifications, setNotifications] = useState([]);
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [expandedSections, setExpandedSections] = useState(() =>
+        CUSTOMER_MENU_SECTIONS.reduce((state, section) => {
+            state[section.id] = true;
+            return state;
+        }, {})
+    );
 
     useEffect(() => {
         const fetchNotifications = async () => {
@@ -64,6 +56,7 @@ const BankingDashboard = () => {
     }, [user]);
 
     const unreadCount = useMemo(() => notifications.length, [notifications]);
+    const pageMeta = getDashboardMeta(location.pathname);
 
     const handleSignOut = () => {
         logout();
@@ -73,6 +66,13 @@ const BankingDashboard = () => {
     const closeMenus = () => {
         setShowUserMenu(false);
         setMobileMenuOpen(false);
+    };
+
+    const toggleSection = (sectionId) => {
+        setExpandedSections((current) => ({
+            ...current,
+            [sectionId]: !current[sectionId],
+        }));
     };
 
     return (
@@ -86,7 +86,68 @@ const BankingDashboard = () => {
                 </Link>
 
                 <nav className="dashboard-nav">
-                    {MENU_ITEMS.map((item) => {
+                    <div className="nav-group-label">Customer Banking</div>
+
+                    {CUSTOMER_MENU_SECTIONS.map((section) => {
+                        const Icon = section.icon;
+                        const isExpanded = expandedSections[section.id];
+                        const isSectionActive =
+                            location.pathname === section.to || location.pathname.startsWith(`${section.to}/`);
+
+                        return (
+                            <div key={section.id} className={`menu-group ${isSectionActive ? 'active' : ''}`}>
+                                <button
+                                    type="button"
+                                    className="menu-section-toggle"
+                                    onClick={() => toggleSection(section.id)}
+                                >
+                                    <span className="menu-section-label">
+                                        <span className="menu-section-icon">
+                                            <Icon size={18} />
+                                        </span>
+                                        <span>
+                                            <strong>{section.label}</strong>
+                                            <small>{section.caption}</small>
+                                        </span>
+                                    </span>
+                                    {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                                </button>
+
+                                {isExpanded && (
+                                    <div className="menu-subnav">
+                                        <NavLink
+                                            to={section.to}
+                                            end
+                                            className={({ isActive }) => `submenu-link ${isActive ? 'active' : ''}`}
+                                            onClick={closeMenus}
+                                        >
+                                            <LayoutDashboard size={15} />
+                                            <span>{section.label} Home</span>
+                                        </NavLink>
+
+                                        {section.items.map((item) => {
+                                            const ItemIcon = item.icon;
+                                            return (
+                                                <NavLink
+                                                    key={item.to}
+                                                    to={item.to}
+                                                    className={({ isActive }) => `submenu-link ${isActive ? 'active' : ''}`}
+                                                    onClick={closeMenus}
+                                                >
+                                                    <ItemIcon size={15} />
+                                                    <span>{item.label}</span>
+                                                </NavLink>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+
+                    <div className="nav-group-label nav-group-label-spaced">Operations</div>
+
+                    {OPERATIONS_MENU_ITEMS.map((item) => {
                         const Icon = item.icon;
                         return (
                             <NavLink
@@ -119,8 +180,8 @@ const BankingDashboard = () => {
                     </button>
 
                     <div className="topbar-title">
-                        <h1>Professional Banking Workspace</h1>
-                        <p>Manage accounts, payments, reports, and platform operations</p>
+                        <h1>{pageMeta.title}</h1>
+                        <p>{pageMeta.subtitle}</p>
                     </div>
 
                     <div className="topbar-actions">

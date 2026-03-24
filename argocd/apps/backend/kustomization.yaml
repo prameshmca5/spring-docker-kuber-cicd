@@ -9,6 +9,8 @@ resources:
   - transaction-service.yaml
   - notification-service.yaml
   - payment-service.yaml
+  - card-service.yaml
+  - loan-service.yaml
   - employee-service.yaml
   - common-service.yaml
   - auth-service.yaml
