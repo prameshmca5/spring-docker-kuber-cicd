@@ -2,7 +2,7 @@ serviceName: "notification-service"
 image:
   repository: "docker.io/rameshkp2/notification-service"
   pullPolicy: Always
-  tag: "29f8ced2df0a"
+  tag: "784ca8a0e690"
 service:
   type: ClusterIP
   port: 8084
