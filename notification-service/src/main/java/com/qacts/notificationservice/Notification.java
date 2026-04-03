@@ -14,7 +14,9 @@ public class Notification {
     private String title;
     @Column(columnDefinition = "TEXT")
     private String message;
+    @Column(name = "is_read")
     private boolean read = false;
+    @Column(name = "created_at")
     private LocalDateTime timestamp = LocalDateTime.now();
 
     public Notification() {

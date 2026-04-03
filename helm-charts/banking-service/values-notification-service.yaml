@@ -6,3 +6,5 @@ image:
 service:
   type: ClusterIP
   port: 8084
+appConfig:
+  KAFKA_LISTENER_ENABLED: "true"
