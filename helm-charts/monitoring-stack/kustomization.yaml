@@ -4,6 +4,7 @@ namespace: monitoring
 generatorOptions:
   disableNameSuffixHash: true
 resources:
+  - apm-server.yaml
   - alertmanager.yaml
   - grafana.yaml
   - jaeger.yaml

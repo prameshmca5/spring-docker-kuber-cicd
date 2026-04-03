@@ -1,24 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
-    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
     <springProperty scope="context" name="SERVICE_NAME" source="spring.application.name"/>
+    <springProperty scope="context" name="ACTIVE_PROFILE" source="spring.profiles.active"/>
 
     <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-            <customFields>{"service":"${SERVICE_NAME:-unknown}"}</customFields>
+            <charset>UTF-8</charset>
+            <customFields>{"service":"${SERVICE_NAME:-unknown}","environment":"${ACTIVE_PROFILE:-default}"}</customFields>
             <includeMdc>true</includeMdc>
             <includeContext>true</includeContext>
+            <includeStructuredArguments>true</includeStructuredArguments>
+            <includeTags>true</includeTags>
+            <timeZone>UTC</timeZone>
             <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
                 <maxDepthPerThrowable>30</maxDepthPerThrowable>
-                <maxLength>2048</maxLength>
+                <maxLength>4096</maxLength>
                 <shortenedClassNameLength>20</shortenedClassNameLength>
                 <rootCauseFirst>true</rootCauseFirst>
             </throwableConverter>
         </encoder>
     </appender>
 
-    <root level="INFO">
+    <root level="${LOGGING_LEVEL_ROOT:-INFO}">
         <appender-ref ref="JSON_CONSOLE"/>
     </root>
 </configuration>

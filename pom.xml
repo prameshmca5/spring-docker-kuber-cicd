@@ -22,6 +22,9 @@
         <java.version>17</java.version>
         <spring-cloud.version>2023.0.3</spring-cloud.version>
         <micrometer.version>1.13.4</micrometer.version>
+        <slf4j.version>2.0.17</slf4j.version>
+        <logback.version>1.5.18</logback.version>
+        <logstash-logback-encoder.version>8.1</logstash-logback-encoder.version>
         <skipTests>true</skipTests>
     </properties>
 
@@ -79,7 +82,7 @@
             <dependency>
                 <groupId>net.logstash.logback</groupId>
                 <artifactId>logstash-logback-encoder</artifactId>
-                <version>7.4</version>
+                <version>${logstash-logback-encoder.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.micrometer</groupId>

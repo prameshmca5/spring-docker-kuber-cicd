@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apm-server-config
+  namespace: monitoring
+data:
+  apm-server.yml: |
+    apm-server:
+      host: "0.0.0.0:8200"
+      rum:
+        enabled: true
+    output.elasticsearch:
+      hosts: ["http://elasticsearch.monitoring.svc.cluster.local:9200"]
+    setup.kibana:
+      host: "http://kibana.monitoring.svc.cluster.local:5601"
+    monitoring:
+      enabled: false
+    logging:
+      json: true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apm-server
+  namespace: monitoring
+  labels:
+    app: apm-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: apm-server
+  template:
+    metadata:
+      labels:
+        app: apm-server
+    spec:
+      containers:
+        - name: apm-server
+          image: docker.elastic.co/apm/apm-server:7.17.10
+          args:
+            - "-e"
+            - "-c"
+            - "/usr/share/apm-server/apm-server.yml"
+          ports:
+            - containerPort: 8200
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: config
+              mountPath: /usr/share/apm-server/apm-server.yml
+              subPath: apm-server.yml
+      volumes:
+        - name: config
+          configMap:
+            name: apm-server-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apm-server
+  namespace: monitoring
+spec:
+  selector:
+    app: apm-server
+  ports:
+    - name: http
+      port: 8200
+      targetPort: http
+      nodePort: 31200
+  type: NodePort

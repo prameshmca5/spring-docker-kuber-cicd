@@ -38,8 +38,8 @@
                 "enableLogDetails": true,
                 "order": "descending",
                 "prettifyLogMessage": true,
-                "showCommonLabels": false,
-                "showLabels": false,
+                "showCommonLabels": true,
+                "showLabels": true,
                 "showTime": true,
                 "sortOrder": "Descending",
                 "wrapLogMessage": true
@@ -51,12 +51,12 @@
                         "uid": "loki"
                     },
                     "editorMode": "code",
-                    "expr": "{namespace=\"backend\", container=\"$service\"} |= ``",
+                    "expr": "{namespace=~\"$namespace\", container=~\"$workload\"} |= ``",
                     "queryType": "range",
                     "refId": "A"
                 }
             ],
-            "title": "Application Logs: $service",
+            "title": "Application Logs: $namespace / $workload",
             "type": "logs"
         }
     ],
@@ -66,22 +66,56 @@
     "templating": {
         "list": [
             {
-                "current": {},
+                "allValue": "backend|frontend",
+                "current": {
+                    "selected": true,
+                    "text": "All",
+                    "value": "backend|frontend"
+                },
+                "datasource": {
+                    "type": "loki",
+                    "uid": "loki"
+                },
+                "definition": "label_values(namespace)",
+                "hide": 0,
+                "includeAll": true,
+                "label": "Namespace",
+                "multi": true,
+                "name": "namespace",
+                "options": [],
+                "query": {
+                    "label": "namespace",
+                    "refId": "LokiVariableQuery",
+                    "stream": "{}"
+                },
+                "refresh": 1,
+                "regex": "/^(backend|frontend)$/",
+                "skipUrlSync": false,
+                "sort": 1,
+                "type": "query"
+            },
+            {
+                "allValue": ".+",
+                "current": {
+                    "selected": true,
+                    "text": "All",
+                    "value": ".+"
+                },
                 "datasource": {
                     "type": "loki",
                     "uid": "loki"
                 },
                 "definition": "label_values(container)",
                 "hide": 0,
-                "includeAll": false,
-                "label": "Service",
-                "multi": false,
-                "name": "service",
+                "includeAll": true,
+                "label": "Workload",
+                "multi": true,
+                "name": "workload",
                 "options": [],
                 "query": {
                     "label": "container",
                     "refId": "LokiVariableQuery",
-                    "stream": "{namespace=\"backend\"}"
+                    "stream": "{namespace=~\"$namespace\"}"
                 },
                 "refresh": 1,
                 "regex": "",

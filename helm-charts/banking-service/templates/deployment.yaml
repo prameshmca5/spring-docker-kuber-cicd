@@ -42,12 +42,16 @@ spec:
           env:
             - name: SERVER_PORT
               value: "{{ .Values.service.port }}"
+            - name: SPRING_APPLICATION_NAME
+              value: "{{ .Values.serviceName }}"
 {{- if ne .Values.serviceName "discovery-server" }}
             - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
               value: "$(EUREKA_SERVER_URL)"
 {{- end }}
             - name: MANAGEMENT_OTLP_TRACING_ENDPOINT
               value: "$(JAEGER_OTLP_ENDPOINT)"
+            - name: MANAGEMENT_TRACING_ENABLED
+              value: "$(MANAGEMENT_TRACING_ENABLED)"
             - name: MANAGEMENT_TRACING_SAMPLING_PROBABILITY
               value: "$(OTEL_SAMPLING_PROBABILITY)"
             - name: MANAGEMENT_TRACING_PROPAGATION_TYPE
@@ -60,6 +64,22 @@ spec:
               value: "$(LOGGING_LEVEL_COM_EXAMPLE)"
             - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
               value: "$(MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE)"
+            - name: ELASTIC_APM_ENABLED
+              value: "$(ELASTIC_APM_ENABLED)"
+            - name: ELASTIC_APM_SERVICE_NAME
+              value: "{{ .Values.serviceName }}"
+            - name: ELASTIC_APM_ENVIRONMENT
+              value: "$(ELASTIC_APM_ENVIRONMENT)"
+            - name: ELASTIC_APM_SERVER_URL
+              value: "$(ELASTIC_APM_SERVER_URL)"
+            - name: ELASTIC_APM_LOG_LEVEL
+              value: "$(ELASTIC_APM_LOG_LEVEL)"
+            - name: ELASTIC_APM_ENABLE_LOG_CORRELATION
+              value: "$(ELASTIC_APM_ENABLE_LOG_CORRELATION)"
+            - name: ELASTIC_APM_LOG_ECS_REFORMATTING
+              value: "$(ELASTIC_APM_LOG_ECS_REFORMATTING)"
+            - name: ELASTIC_APM_TRANSACTION_SAMPLE_RATE
+              value: "$(ELASTIC_APM_TRANSACTION_SAMPLE_RATE)"
           startupProbe:
             httpGet:
               path: /actuator/health/liveness

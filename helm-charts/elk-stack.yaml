@@ -87,3 +87,4 @@ spec:
     - port: 5601
       targetPort: 5601
   type: NodePort
+  nodePort: 30601

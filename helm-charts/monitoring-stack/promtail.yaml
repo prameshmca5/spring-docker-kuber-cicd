@@ -29,8 +29,16 @@ data:
           - source_labels: [__meta_kubernetes_pod_name]
             target_label: pod
           - source_labels: [__meta_kubernetes_pod_label_app]
+            regex: "(.+)"
+            target_label: app
+          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_instance]
+            regex: "(.+)"
             target_label: app
           - source_labels: [__meta_kubernetes_pod_label_app]
+            regex: "(.+)"
+            target_label: service
+          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_instance]
+            regex: "(.+)"
             target_label: service
           - source_labels: [__meta_kubernetes_pod_container_name]
             target_label: container
@@ -42,17 +50,16 @@ data:
             separator: /
             target_label: __path__
         pipeline_stages:
+          - cri: {}
           - json:
               expressions:
-                severity: severity
+                level: level
                 message: message
                 service: service
-                class: class
+                logger: logger_name
           - labels:
-              severity:
+              level:
               service:
-          - output:
-              source: message
 ---
 apiVersion: v1
 kind: ServiceAccount

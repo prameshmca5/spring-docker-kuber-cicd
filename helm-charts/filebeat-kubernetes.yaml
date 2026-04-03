@@ -27,9 +27,10 @@ data:
       - add_host_metadata: ~
       - decode_json_fields:
           fields: ["message"]
-          target: "json"
+          target: ""
           overwrite_keys: true
           add_error_key: true
+          expand_keys: true
 
     output.elasticsearch:
       hosts: ['${ELASTICSEARCH_HOST:elasticsearch}:9200']
