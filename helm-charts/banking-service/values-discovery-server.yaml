@@ -1,7 +1,7 @@
 serviceName: "discovery-server"
 image:
-  repository: "docker.io/rameshkp2/discovery-server"
-  pullPolicy: Always
+  repository: "springbootapps-discovery-server"
+  pullPolicy: Never
   tag: "latest"
 service:
   type: ClusterIP

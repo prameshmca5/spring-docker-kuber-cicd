@@ -1,7 +1,7 @@
 serviceName: "customer-service"
 image:
-  repository: "docker.io/rameshkp2/customer-service"
-  pullPolicy: Always
+  repository: "springbootapps-customer-service"
+  pullPolicy: Never
   tag: "latest"
 service:
   type: ClusterIP

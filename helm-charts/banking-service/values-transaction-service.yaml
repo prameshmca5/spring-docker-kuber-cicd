@@ -1,7 +1,7 @@
 serviceName: "transaction-service"
 image:
-  repository: "docker.io/rameshkp2/transaction-service"
-  pullPolicy: Always
+  repository: "springbootapps-transaction-service"
+  pullPolicy: Never
   tag: "latest"
 service:
   type: ClusterIP

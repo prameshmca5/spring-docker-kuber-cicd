@@ -1,7 +1,7 @@
 serviceName: "common-service"
 image:
-  repository: "docker.io/rameshkp2/common-service"
-  pullPolicy: Always
+  repository: "springbootapps-common-service"
+  pullPolicy: Never
   tag: "latest"
 service:
   type: ClusterIP

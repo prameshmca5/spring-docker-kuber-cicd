@@ -3,7 +3,7 @@ FROM curlimages/curl:8.13.0 AS elastic-apm-agent
 ARG ELASTIC_APM_AGENT_VERSION=1.55.4
 
 RUN curl -fsSL --retry 5 \
-    --output /elastic-apm-agent.jar \
+    --output /tmp/elastic-apm-agent.jar \
     "https://repo1.maven.org/maven2/co/elastic/apm/elastic-apm-agent/${ELASTIC_APM_AGENT_VERSION}/elastic-apm-agent-${ELASTIC_APM_AGENT_VERSION}.jar"
 
 FROM eclipse-temurin:17-jre-jammy
@@ -22,7 +22,7 @@ WORKDIR /app
 # We skip the redundant multi-stage build to save 15+ minutes!
 COPY ${MODULE_NAME}/target/*.jar app.jar
 RUN mkdir -p /opt/elastic/apm
-COPY --from=elastic-apm-agent /elastic-apm-agent.jar /opt/elastic/apm/elastic-apm-agent.jar
+COPY --from=elastic-apm-agent /tmp/elastic-apm-agent.jar /opt/elastic/apm/elastic-apm-agent.jar
 COPY docker/entrypoint.sh /entrypoint.sh
 
 # Give ownership to the non-root user

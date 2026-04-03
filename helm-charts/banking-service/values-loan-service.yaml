@@ -1,7 +1,7 @@
 serviceName: "loan-service"
 image:
-  repository: "docker.io/rameshkp2/loan-service"
-  pullPolicy: Always
+  repository: "springbootapps-loan-service"
+  pullPolicy: Never
   tag: "latest"
 service:
   type: ClusterIP

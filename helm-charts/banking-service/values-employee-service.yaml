@@ -1,7 +1,7 @@
 serviceName: "employee-service"
 image:
-  repository: "docker.io/rameshkp2/employee-service"
-  pullPolicy: Always
+  repository: "springbootapps-employee-service"
+  pullPolicy: Never
   tag: "latest"
 service:
   type: ClusterIP

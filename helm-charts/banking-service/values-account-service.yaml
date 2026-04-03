@@ -1,7 +1,7 @@
 serviceName: "account-service"
 image:
-  repository: "docker.io/rameshkp2/account-service"
-  pullPolicy: Always
+  repository: "springbootapps-account-service"
+  pullPolicy: Never
   tag: "latest"
 service:
   type: ClusterIP
