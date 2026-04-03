@@ -1,8 +1,8 @@
 serviceName: "customer-service"
 image:
-  repository: "springbootapps-customer-service"
-  pullPolicy: Never
-  tag: "latest"
+  repository: "docker.io/rameshkp2/customer-service"
+  pullPolicy: Always
+  tag: "29f8ced2df0a"
 service:
   type: ClusterIP
   port: 8082

@@ -1,8 +1,8 @@
 serviceName: "api-gateway"
 image:
-  repository: "springbootapps-api-gateway"
-  pullPolicy: Never
-  tag: "latest"
+  repository: "docker.io/rameshkp2/api-gateway"
+  pullPolicy: Always
+  tag: "29f8ced2df0a"
 service:
   type: NodePort
   port: 8080

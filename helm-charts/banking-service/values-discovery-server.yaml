@@ -1,8 +1,8 @@
 serviceName: "discovery-server"
 image:
-  repository: "springbootapps-discovery-server"
-  pullPolicy: Never
-  tag: "latest"
+  repository: "docker.io/rameshkp2/discovery-server"
+  pullPolicy: Always
+  tag: "29f8ced2df0a"
 service:
   type: ClusterIP
   port: 8761

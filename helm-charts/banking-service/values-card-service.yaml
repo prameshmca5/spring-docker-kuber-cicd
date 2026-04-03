@@ -1,8 +1,8 @@
 serviceName: "card-service"
 image:
-  repository: "springbootapps-card-service"
-  pullPolicy: Never
-  tag: "latest"
+  repository: "docker.io/rameshkp2/card-service"
+  pullPolicy: Always
+  tag: "29f8ced2df0a"
 service:
   type: ClusterIP
   port: 8086

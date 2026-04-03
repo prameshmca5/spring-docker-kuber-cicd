@@ -1,8 +1,8 @@
 serviceName: "notification-service"
 image:
-  repository: "springbootapps-notification-service"
-  pullPolicy: Never
-  tag: "latest"
+  repository: "docker.io/rameshkp2/notification-service"
+  pullPolicy: Always
+  tag: "29f8ced2df0a"
 service:
   type: ClusterIP
   port: 8084

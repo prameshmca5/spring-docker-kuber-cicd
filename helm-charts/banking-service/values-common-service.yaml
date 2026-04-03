@@ -1,8 +1,8 @@
 serviceName: "common-service"
 image:
-  repository: "springbootapps-common-service"
-  pullPolicy: Never
-  tag: "latest"
+  repository: "docker.io/rameshkp2/common-service"
+  pullPolicy: Always
+  tag: "29f8ced2df0a"
 service:
   type: ClusterIP
   port: 8087
